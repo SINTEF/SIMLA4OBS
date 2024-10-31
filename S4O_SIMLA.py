@@ -1,0 +1,450 @@
+"""
+File: S4O_SIMLA.py
+Description:
+These functions creates SIMLA input files, runs SIMLA and reads results.
+"""
+__author__ = "Egil Giertsen"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024"
+__maintainer__ = "Egil Giertsen"
+__email__ = "giertsen@sintef.no"
+
+import pandas as pd
+import streamlit as st
+import subprocess
+import os
+import time
+import random
+from random import randint
+from S4O_MakeSIMLAInput import S4O_MakeSIMLAInput
+
+def S4O_Create_Input_Files(frun, lrun):
+	
+	#	Check if model has been stored
+	file_path = st.session_state.modelFilePath
+	if file_path == '' or not os.path.exists(file_path):
+		st.error("You have to save your model before you can create input files!", icon="🚨")
+		return
+
+	#	Check if model directory exists and create it if not
+	mod_path = st.session_state.modelFileDir + "/" + st.session_state.modelFileName
+	if not os.path.exists(mod_path):
+		if st.session_state.ExtendedPrint: st.info("Creating model directory : " + mod_path)
+		os.mkdir(mod_path)
+
+	#	Create dummy input files
+	irun = frun
+	while irun <= lrun:
+
+		#	Assign run directory and create it if it does not exist
+		run_path = mod_path + "/r" + str(irun)
+		if not os.path.exists(run_path):
+			if st.session_state.ExtendedPrint: st.info("Creating run directory : " + run_path)
+			os.mkdir(run_path)
+
+		#	Assign SIMLA input file
+		sifname = run_path + "/s.sif"
+
+		#	Generate SIMLA input file
+		S4O_Generate_SIMLA_Input(sifname, irun)
+
+		#	Assign next run number
+		irun += 1
+
+	#	Generate DYNPOST EXT input file
+	S4O_Generate_DYNPOST_EXT_Input(mod_path, lrun)
+
+	return
+#
+#
+
+def S4O_Generate_SIMLA_Input(sifname, irun):
+
+	#	Generate DYNPOST EXT input file
+	if st.session_state.ExtendedPrint: st.write('Generating SIMLA input file : ' + sifname)
+	if st.session_state.ExtendedPrint: st.write('Generating DYNPOST MPF input file : ' + os.path.dirname(sifname) + '/s.sdi')
+
+	S4O_MakeSIMLAInput(sifname, irun)
+
+	return
+#
+#
+def S4O_Generate_DYNPOST_EXT_Input(mod_path, lrun):
+
+	#	Generate DYNPOST EXT input file
+	sdiname = mod_path + '/extremes.sdi'
+	if st.session_state.ExtendedPrint: st.write('Generating DYNPOST EXT input file : ' + sdiname)
+
+	#	Open file
+	sdifile = open(sdiname, 'w')
+
+	#	Write input for lateral displacement maximum values (type=1, idynres=11[node=1,dof=2])
+	irun = 0
+	for ndx in range(lrun):
+		irun += 1
+		if irun == 1:
+			dynname = "r" + str(irun) + "/s"
+			sdifile.write("#        type   frac   idynres   nmax    time0    mpf               dyn\n")
+			sdifile.write("MXPLOT   %i      %.2f   %i        %i       %.1f     \"disp-uy-max\"     \"%s\"\n" % ( 1, 0.01, 11, 1, 50.0, dynname) )
+		else:
+			dynname = "r" + str(irun) + "/s"
+			sdifile.write("                                                                    \"%s\"\n" % ( dynname) )
+
+	#	Write input for lateral displacement minimum values (type=-1, idynres=11[node=1,dof=2])
+	irun = 0
+	for ndx in range(lrun):
+		irun += 1
+		if irun == 1:
+			dynname = "r" + str(irun) + "/s"
+			sdifile.write("#        type   frac   idynres   nmax    time0    mpf               dyn\n")
+			sdifile.write("MXPLOT   %i     %.2f   %i        %i       %.1f     \"disp-uy-min\"     \"%s\"\n" % ( -1, 0.01, 11, 1, 50.0, dynname) )
+		else:
+			dynname = "r" + str(irun) + "/s"
+			sdifile.write("                                                                    \"%s\"\n" % ( dynname) )
+
+	#	Close file
+	sdifile.close()
+
+	return
+#
+#
+
+def S4O_Run_SIMLA():
+
+	#
+	#	Generate input files, run SIMLA analyses (SIMLA + DYNPOST) and generate results
+	#
+	
+	#	Check if model has been stored
+	file_path = st.session_state.modelFilePath
+	if file_path == '' or not os.path.exists(file_path):
+		st.error("You have to save your model before you can run it!", icon="🚨")
+		return
+
+	#	Assign run parameters
+	nrunsmax = int(st.session_state.df_Execution.iloc[2,1])
+	nblocks = st.session_state.noBlocksToRun 
+	nrunspb = st.session_state.maxRunsPB
+
+	#	Assign block number and first and last run number for the first block to be run
+	cblock = 1
+	frun = 1
+	nrunscb = nrunspb
+	if nrunscb > nrunsmax: nrunscb = nrunsmax
+	lrun = frun + nrunscb - 1
+
+	#	Fake SIMLA runs with the sleep command?
+	if st.session_state.RunAnalyses:
+		if st.session_state.FakeRuns:
+			st.warning('Simulating ' + str(nblocks) + ' SIMLA blocks with the sleep command for runs 1 to ' + str(nrunsmax) + '!', icon="⚠️")
+		else:
+			st.info('Executing ' + str(nblocks) + ' SIMLA blocks for runs 1 to ' + str(nrunsmax) + '.')
+
+	#	Show SIMLA progress bar
+	if st.session_state.GenerateInputs or st.session_state.RunAnalyses:
+		st.write('SIMLA progress bar :')
+		st.session_state.simlaProgressCurr = int(0)
+		st.session_state.simlaProgressDelta = int(100/nrunsmax)
+		st.session_state.simlaProgressBar = st.progress(st.session_state.simlaProgressCurr)
+
+	#	Loop over number of blocks to be run
+	while cblock <= nblocks:
+
+		if not st.session_state.FakeRuns: st.write('Executing SIMLA block number ' + str(cblock) + ' for runs ' + str(frun) + ' to ' + str(lrun) + '.')
+
+		#	Create input files if the "Generate input files" check box is checked
+		if st.session_state.GenerateInputs: S4O_Create_Input_Files(frun, lrun)
+
+		#	Run the current SIMLA block
+		if st.session_state.RunAnalyses:
+
+			#	Run the SIMLA block if the "Run analyses" check box is checked
+			S4O_Run_SIMLA_Block(frun, lrun)
+
+			#	Generate results for all runs including current block (only if not fake runs)
+			if not st.session_state.FakeRuns: S4O_Generate_Results()
+
+		elif st.session_state.GenerateInputs and not st.session_state.RunAnalyses:
+			#	Update the progress bar if only the "Generate input files" check box is checked
+			st.session_state.simlaProgressCurr += (lrun-frun+1)*st.session_state.simlaProgressDelta
+			st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
+
+		#	Check if tolerance was reached after the current block
+		if st.session_state.stdtolRunNumber > 0: break
+
+		#	Update block number for next block to be run
+		cblock +=1
+
+		#	Update first and last run number for next block to be run
+		frun = lrun + 1
+		lrun = frun + nrunspb - 1
+		if lrun > nrunsmax: lrun = nrunsmax
+
+	#	All SIMLA runs completed
+	st.write('All SIMLA blocks (' + str(nblocks) + ') covering runs 1 to ' + str(lrun) + ' have finished.')
+
+	#	Set progress bar to "Complete" (100)
+	if st.session_state.GenerateInputs or st.session_state.RunAnalyses: st.session_state.simlaProgressBar.progress(100)
+
+	return
+#
+#
+
+def S4O_Run_SIMLA_Block(frun, lrun):
+
+	#	------------------------------------
+	#	Start all SIMLA runs as subprocesses
+	#	------------------------------------
+	irun = frun
+	ndx = 0
+	plist = []
+	rlist = []
+	while irun <= lrun:
+		p = S4O_SIMLA_Subprocess_Open(irun)
+		plist.append(p)
+		rlist.append(True)
+		irun += 1
+		ndx += 1
+
+	#	Check if any of the SIMLA subprocesses are still running
+	stillrunning = True
+	while stillrunning:
+
+		#	Check status for all runs in current block
+		irun = frun
+		ndx = 0
+		nprunning = 0
+		while irun <= lrun:
+			if plist[ndx].poll() is not None:
+				if rlist[ndx]:
+					if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' has finished.')
+					st.session_state.simlaProgressCurr += st.session_state.simlaProgressDelta
+					st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
+					rlist[ndx] = False
+					if not S4O_SIMLA_Check_Run_Success(irun):
+						st.error('SIMLA run number ' + str(irun) + ' failed!', icon="🚨")
+						break
+			else:
+				nprunning += 1
+
+			irun += 1
+			ndx += 1
+
+		if nprunning == 0: stillrunning = False
+
+		if stillrunning: time.sleep(1)
+
+	if not st.session_state.FakeRuns and st.session_state.ExtendedPrint: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
+
+	#	------------------------------------------
+	#	Start all DYNPOST MPF runs as subprocesses
+	#	------------------------------------------
+	irun = frun
+	ndx = 0
+	plist = []
+	rlist = []
+	while irun <= lrun:
+		p = S4O_DYNPOST_Subprocess_Open(irun)
+		plist.append(p)
+		rlist.append(True)
+		irun += 1
+		ndx += 1
+
+	#	Check if any of the DYNPOST subprocesses are still running
+	stillrunning = True
+	while stillrunning:
+
+		#	Check status for all DYNPOST runs in current block
+		irun = frun
+		ndx = 0
+		nprunning = 0
+		while irun <= lrun:
+			if plist[ndx].poll() is not None:
+				if rlist[ndx]:
+					if st.session_state.ExtendedPrint: st.write('DYNPOST MPF run number ' + str(irun) + ' has finished.')
+					rlist[ndx] = False
+					if not S4O_DYNPOST_MPF_Check_Run_Success(irun):
+						st.error('DYNPOST MPF run number ' + str(irun) + ' failed!', icon="🚨")
+						break
+			else:
+				nprunning += 1
+
+			irun += 1
+			ndx += 1
+
+		if nprunning == 0: stillrunning = False
+
+		if stillrunning: time.sleep(1)
+
+	if st.session_state.ExtendedPrint: st.write('All DYNPOST MPF runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
+
+	#	--------------------------------------
+	#	Run DYNPOST to generate EXTREME values
+	#	--------------------------------------
+	S4O_SIMLA_DYNPOST_EXT_Run(lrun)
+
+	#	Check if DYNPOST EXT run was successfully completed
+	if not S4O_DYNPOST_EXT_Check_Run_Success(): st.error('DYNPOST EXT run failed for SIMLA run numbers 1 to ' + str(lrun) + '!', icon="🚨")
+
+	return
+#
+#
+
+def S4O_SIMLA_Subprocess_Open(irun):
+
+	#	Change working directory to the current SIMLA run directory
+	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun)
+	os.chdir(cwd)
+
+	#	Run SIMLA or fake a SIMLA run with the sleep command?
+	if st.session_state.FakeRuns:
+		#	Assign a sleep command to fake a SIMLA run
+		s2w = random.randint(15,30)
+		runcmd = 'sleep(' + str(s2w) + ')'
+		if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
+	else:
+		#	Assign the SIMLA run command
+		runcmd = st.session_state.SIMLA_EXE + ' -n s > print.out'
+
+	#	Open the SIMLA subprocess
+	p = subprocess.Popen(["powershell", runcmd])
+
+	return p
+#
+#
+
+def S4O_DYNPOST_Subprocess_Open(irun):
+
+	#	Change working directory to the current SIMLA run directory
+	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun)
+	os.chdir(cwd)
+
+	#	Run DYNPOST or fake a DYNPOST run with the sleep command?
+	if st.session_state.FakeRuns:
+		#	Assign a sleep command to fake a DYNPOST MPF run
+		s2w = random.randint(1,5)
+		runcmd = 'sleep(' + str(s2w) + ')'
+		if st.session_state.ExtendedPrint: st.write('DYNPOST MPF run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
+	else:
+		#	Assign the DYNPOST run command
+		runcmd = st.session_state.DYNPOST_EXE + ' -n s > print.out'
+
+	#	Open the DYNPOST subprocess
+	p = subprocess.Popen(["powershell", runcmd])
+
+	return p
+#
+#
+
+def S4O_SIMLA_DYNPOST_EXT_Run(lrun):
+
+	#	Change working directory to current model directory
+	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName
+	os.chdir(cwd)
+
+	#	Run DYNPOST or fake a DYNPOST run with the sleep command?
+	if st.session_state.FakeRuns:
+		#	Assign a sleep command to fake a DYNPOST EXT run
+		s2w = random.randint(5,10)
+		runcmd = 'sleep(' + str(s2w) + ')'
+		if st.session_state.ExtendedPrint: st.write('DYNPOST EXT run waits for ' + str(s2w) + ' seconds.')
+	else:
+		#	Assign the DYNPOST run command
+		runcmd = st.session_state.DYNPOST_EXE + ' -n extremes > print.out'
+
+	#	Execute DYNPOST to generate EXT values
+	rext = subprocess.run(["powershell", runcmd])
+
+	if rext.returncode != 0: st.error('DYNPOST EXT run failed!', icon="🚨")
+
+	return
+#
+#
+
+def S4O_SIMLA_Check_Run_Success(irun):
+
+	#	Return True if simulated run
+	if st.session_state.FakeRuns: return True
+
+	#	Set default return value
+	success = False
+
+	#	Assign SIMLA list file name
+	slfname = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun) + '/s.slf'
+
+	#	Open the SIMLA list file in read mode and extract the last 16 lines
+	with open(slfname, "r") as slf:
+		#	Read all lines in the file
+		all_lines = slf.readlines()
+		#	Extract the last 16 lines
+		last_16_lines = all_lines[-16:]
+	
+	#	Search for the string "SIMLA successfully completed" in the last 16 lines
+	strsuccess = 'SIMLA successfully completed'
+	for ndx in range(len(last_16_lines)):
+		if strsuccess in last_16_lines[ndx]:
+			success = True
+			break
+
+	return success
+#
+#
+
+def S4O_DYNPOST_MPF_Check_Run_Success(irun):
+
+	#	Return True if simulated run
+	if st.session_state.FakeRuns: return True
+
+	#	Set default return value
+	success = False
+
+	#	Assign DYNPOST list file name
+	sdoname = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun) + '/s.sdo'
+
+	#	Open the DYNPOST list file in read mode and extract the last 17 lines
+	with open(sdoname, "r") as sdo:
+		#	Read all lines in the file
+		all_lines = sdo.readlines()
+		#	Extract the last 17 lines
+		last_17_lines = all_lines[-17:]
+	
+	#	Search for the string "DYNPOST successfully completed" in the last 17 lines
+	strsuccess = 'DYNPOST successfully completed'
+	for ndx in range(len(last_17_lines)):
+		if strsuccess in last_17_lines[ndx]:
+			success = True
+			break
+
+	return success
+#
+#
+
+def S4O_DYNPOST_EXT_Check_Run_Success():
+
+	#	Return True if simulated run
+	if st.session_state.FakeRuns: return True
+
+	#	Set default return value
+	success = False
+
+	#	Assign DYNPOST list file name
+	sdoname = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/extremes.sdo'
+
+	#	Open the DYNPOST list file in read mode and extract the last 17 lines
+	with open(sdoname, "r") as sdo:
+		#	Read all lines in the file
+		all_lines = sdo.readlines()
+		#	Extract the last 17 lines
+		last_17_lines = all_lines[-17:]
+	
+	#	Search for the string "DYNPOST successfully completed" in the last 17 lines
+	strsuccess = 'DYNPOST successfully completed'
+	for ndx in range(len(last_17_lines)):
+		if strsuccess in last_17_lines[ndx]:
+			success = True
+			break
+
+	return success
+#
+#
