@@ -23,7 +23,7 @@ def S4O_Environment():
 	st.header('Environment parameters')
 
 	#	Update Dashboard layout
-	Echo_Inputs 	= st.sidebar.checkbox('Echo input parameters',value=True)
+	Echo_Inputs = st.sidebar.checkbox('Echo input parameters',value=True)
 
 	#	Assign environmental parameters
 	if 'df_Environment' not in st.session_state:
@@ -46,13 +46,13 @@ def S4O_Environment():
 
 	#	Prompt for environmental parameters
 	#	Water depth
-	WD = st.number_input("Water depth [m] :", min_value=0.0, value=WD, step=5.0, format="%.2f")
+	WD = st.number_input("Water depth [m] :", min_value=0.0, value=WD, format="%.2f")
 
 	#	Waves
 	st.subheader('Waves')
-	Hs = st.number_input("Significant wave height [m] :", min_value=0.0, max_value=100.0, value=Hs, step=1.0, format="%.2f")
-	Tp = st.number_input("Significant wave period [s] :", min_value=0.0, max_value=100.0, value=Tp, step=1.0, format="%.2f")
-	Wdir = st.number_input("Wave direction [deg] :", help="Wave direction relative to product X-axis [deg]", min_value=0.0, max_value=180.0, value=Wdir, step=1.0, format="%.2f")
+	Hs = st.number_input("Significant wave height [m] :", min_value=0.0, max_value=100.0, value=Hs, format="%.2f")
+	Tp = st.number_input("Significant wave period [s] :", min_value=0.0, max_value=100.0, value=Tp, format="%.2f")
+	Wdir = st.number_input("Wave direction [deg] :", help="Wave direction relative to product X-axis [deg]", min_value=0.0, max_value=180.0, value=Wdir, format="%.2f")
 	#	Select wave spectrum
 	Spectrum_Selected = st.selectbox('Select wave spectrum :', st.session_state.WaveSpectraOptions, index=cwsnx)
 	swsnx = st.session_state.WaveSpectraOptions.index(Spectrum_Selected)
@@ -67,8 +67,8 @@ def S4O_Environment():
 
 	#	Current
 	st.subheader('Current')
-	Cvel = st.number_input("Current velocity [m/s] :", min_value=0.0, max_value=10.0, value=Cvel, step=0.5, format="%.2f")
-	Cdir = st.number_input("Current direction [deg] :", help="Current direction relative to product X-axis [deg]", min_value=0.0, max_value=180.0, value=Cdir, step=1.0, format="%.2f")
+	Cvel = st.number_input("Current velocity [m/s] :", min_value=0.0, max_value=10.0, value=Cvel, format="%.2f")
+	Cdir = st.number_input("Current direction [deg] :", help="Current direction relative to product X-axis [deg]", min_value=0.0, max_value=180.0, value=Cdir, format="%.2f")
 	Crefp = st.number_input("Reference point [m] :", help="Reference point above seabed [m]", min_value=0.0, value=Crefp, format="%.2f")
 	Csrou = st.number_input("Seabed roughness [m] :", min_value=0.0, value=Csrou, format="%.4e")
 	Cmgsz = st.number_input("Median grain size [m] :", help="Median grain size of soil particles (d_50) [m]", min_value=0.0, value=Cmgsz, format="%.4e")
@@ -105,7 +105,7 @@ def S4O_Environment_Defaults():
 
 	#	Assign default environmental parameters
 	if 'df_Environment' not in st.session_state:
-		WD = 200.0
+		WD = 50.0
 		Hs = 12.0
 		Tp = 14.0
 		Wdir = 90.0
@@ -114,7 +114,7 @@ def S4O_Environment_Defaults():
 		cstnx = 0
 		Ndir = 1
 		Sexp = 0.0
-		Cvel = 0.2
+		Cvel = 0.3
 		Cdir = 90.0
 		Crefp = 4.0
 		Csrou = 5.00e-6

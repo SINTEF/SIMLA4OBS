@@ -79,26 +79,26 @@ def S4O_Generate_DYNPOST_EXT_Input(mod_path, lrun):
 	#	Open file
 	sdifile = open(sdiname, 'w')
 
-	#	Write input for lateral displacement maximum values (type=1, idynres=11[node=1,dof=2])
+	#	Write input for lateral displacement maximum values (type=1, idynres=5[node=1,dof=2])
 	irun = 0
 	for ndx in range(lrun):
 		irun += 1
 		if irun == 1:
 			dynname = "r" + str(irun) + "/s"
-			sdifile.write("#        type   frac   idynres   nmax    time0    mpf               dyn\n")
-			sdifile.write("MXPLOT   %i      %.2f   %i        %i       %.1f     \"disp-uy-max\"     \"%s\"\n" % ( 1, 0.01, 11, 1, 50.0, dynname) )
+			sdifile.write("#        type   frac   idynres   nmax    time0    -out.txt          dyn\n")
+			sdifile.write("MXPLOT   %i      %.2f   %i         %i       %.1f      \"disp-uy-max\"     \"%s\"\n" % ( 1, 0.0, 5, 1, 0.0, dynname) )
 		else:
 			dynname = "r" + str(irun) + "/s"
 			sdifile.write("                                                                    \"%s\"\n" % ( dynname) )
 
-	#	Write input for lateral displacement minimum values (type=-1, idynres=11[node=1,dof=2])
+	#	Write input for lateral displacement minimum values (type=-1, idynres=5[node=1,dof=2])
 	irun = 0
 	for ndx in range(lrun):
 		irun += 1
 		if irun == 1:
 			dynname = "r" + str(irun) + "/s"
-			sdifile.write("#        type   frac   idynres   nmax    time0    mpf               dyn\n")
-			sdifile.write("MXPLOT   %i     %.2f   %i        %i       %.1f     \"disp-uy-min\"     \"%s\"\n" % ( -1, 0.01, 11, 1, 50.0, dynname) )
+			sdifile.write("#        type   frac   idynres   nmax    time0    -out.txt          dyn\n")
+			sdifile.write("MXPLOT   %i     %.2f   %i         %i       %.1f      \"disp-uy-min\"     \"%s\"\n" % ( -1, 0.0, 5, 1, 0.0, dynname) )
 		else:
 			dynname = "r" + str(irun) + "/s"
 			sdifile.write("                                                                    \"%s\"\n" % ( dynname) )
@@ -114,7 +114,9 @@ def S4O_Run_SIMLA():
 
 	#
 	#	Generate input files, run SIMLA analyses (SIMLA + DYNPOST) and generate results
-	#
+	#	-------------------------------------------------------------------------------
+	#	Set ResultsCalculated to False 
+	st.session_state.ResultsCalculated = False
 	
 	#	Check if model has been stored
 	file_path = st.session_state.modelFilePath
@@ -123,7 +125,7 @@ def S4O_Run_SIMLA():
 		return
 
 	#	Assign run parameters
-	nrunsmax = int(st.session_state.df_Execution.iloc[2,1])
+	nrunsmax = int(st.session_state.df_Execution.iloc[3,1])
 	nblocks = st.session_state.noBlocksToRun 
 	nrunspb = st.session_state.maxRunsPB
 
@@ -143,7 +145,6 @@ def S4O_Run_SIMLA():
 
 	#	Show SIMLA progress bar
 	if st.session_state.GenerateInputs or st.session_state.RunAnalyses:
-		st.write('SIMLA progress bar :')
 		st.session_state.simlaProgressCurr = int(0)
 		st.session_state.simlaProgressDelta = int(100/nrunsmax)
 		st.session_state.simlaProgressBar = st.progress(st.session_state.simlaProgressCurr)
@@ -162,16 +163,10 @@ def S4O_Run_SIMLA():
 			#	Run the SIMLA block if the "Run analyses" check box is checked
 			S4O_Run_SIMLA_Block(frun, lrun)
 
-			#	Generate results for all runs including current block (only if not fake runs)
-			if not st.session_state.FakeRuns: S4O_Generate_Results()
-
 		elif st.session_state.GenerateInputs and not st.session_state.RunAnalyses:
 			#	Update the progress bar if only the "Generate input files" check box is checked
 			st.session_state.simlaProgressCurr += (lrun-frun+1)*st.session_state.simlaProgressDelta
 			st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
-
-		#	Check if tolerance was reached after the current block
-		if st.session_state.stdtolRunNumber > 0: break
 
 		#	Update block number for next block to be run
 		cblock +=1
@@ -185,7 +180,9 @@ def S4O_Run_SIMLA():
 	st.write('All SIMLA blocks (' + str(nblocks) + ') covering runs 1 to ' + str(lrun) + ' have finished.')
 
 	#	Set progress bar to "Complete" (100)
-	if st.session_state.GenerateInputs or st.session_state.RunAnalyses: st.session_state.simlaProgressBar.progress(100)
+	if st.session_state.GenerateInputs or st.session_state.RunAnalyses:
+		st.session_state.simlaProgressBar.progress(100)
+		st.session_state.simlaProgressBar.empty()
 
 	return
 #
@@ -237,56 +234,6 @@ def S4O_Run_SIMLA_Block(frun, lrun):
 
 	if not st.session_state.FakeRuns and st.session_state.ExtendedPrint: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
 
-	#	------------------------------------------
-	#	Start all DYNPOST MPF runs as subprocesses
-	#	------------------------------------------
-	irun = frun
-	ndx = 0
-	plist = []
-	rlist = []
-	while irun <= lrun:
-		p = S4O_DYNPOST_Subprocess_Open(irun)
-		plist.append(p)
-		rlist.append(True)
-		irun += 1
-		ndx += 1
-
-	#	Check if any of the DYNPOST subprocesses are still running
-	stillrunning = True
-	while stillrunning:
-
-		#	Check status for all DYNPOST runs in current block
-		irun = frun
-		ndx = 0
-		nprunning = 0
-		while irun <= lrun:
-			if plist[ndx].poll() is not None:
-				if rlist[ndx]:
-					if st.session_state.ExtendedPrint: st.write('DYNPOST MPF run number ' + str(irun) + ' has finished.')
-					rlist[ndx] = False
-					if not S4O_DYNPOST_MPF_Check_Run_Success(irun):
-						st.error('DYNPOST MPF run number ' + str(irun) + ' failed!', icon="🚨")
-						break
-			else:
-				nprunning += 1
-
-			irun += 1
-			ndx += 1
-
-		if nprunning == 0: stillrunning = False
-
-		if stillrunning: time.sleep(1)
-
-	if st.session_state.ExtendedPrint: st.write('All DYNPOST MPF runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
-
-	#	--------------------------------------
-	#	Run DYNPOST to generate EXTREME values
-	#	--------------------------------------
-	S4O_SIMLA_DYNPOST_EXT_Run(lrun)
-
-	#	Check if DYNPOST EXT run was successfully completed
-	if not S4O_DYNPOST_EXT_Check_Run_Success(): st.error('DYNPOST EXT run failed for SIMLA run numbers 1 to ' + str(lrun) + '!', icon="🚨")
-
 	return
 #
 #
@@ -305,7 +252,7 @@ def S4O_SIMLA_Subprocess_Open(irun):
 		if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
 	else:
 		#	Assign the SIMLA run command
-		runcmd = st.session_state.SIMLA_EXE + ' -n s > print.out'
+		runcmd = st.session_state.SIMLA_EXE + ' -n s' + ' -s2 ' + str(st.session_state.SIMLA_nstep_dynres) + ' > simla_print.out'
 
 	#	Open the SIMLA subprocess
 	p = subprocess.Popen(["powershell", runcmd])
@@ -328,7 +275,7 @@ def S4O_DYNPOST_Subprocess_Open(irun):
 		if st.session_state.ExtendedPrint: st.write('DYNPOST MPF run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
 	else:
 		#	Assign the DYNPOST run command
-		runcmd = st.session_state.DYNPOST_EXE + ' -n s > print.out'
+		runcmd = st.session_state.DYNPOST_EXE + ' -n s > dympf_print.out'
 
 	#	Open the DYNPOST subprocess
 	p = subprocess.Popen(["powershell", runcmd])
@@ -351,7 +298,7 @@ def S4O_SIMLA_DYNPOST_EXT_Run(lrun):
 		if st.session_state.ExtendedPrint: st.write('DYNPOST EXT run waits for ' + str(s2w) + ' seconds.')
 	else:
 		#	Assign the DYNPOST run command
-		runcmd = st.session_state.DYNPOST_EXE + ' -n extremes > print.out'
+		runcmd = st.session_state.DYNPOST_EXE + ' -n extremes > dyext_print.out'
 
 	#	Execute DYNPOST to generate EXT values
 	rext = subprocess.run(["powershell", runcmd])

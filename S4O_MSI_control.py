@@ -35,7 +35,7 @@ def control( file           , iprint         , gacc         ,
     file.write("#\n")
     file.write("#            t                dt            dtvi    dtdy   dt0    type      hlaflag   steptype   iterco   itcrit   maxit   maxdiv   conr\n")
     file.write("TIMECO       %f         %f      1.00    1.0    601.0  static    nohla     auto       none     all      100     5        1e-7\n" % (tend_static, dt_uzini) )
-    file.write("TIMECO       %f     %f      1.00    1.0    100.0  dynamic   nohla     auto       none     all      100     5        1e-7\n" % (tendwaveramp+tdurwave, dtdyn ))
+    file.write("TIMECO       %f     %f      400.00    1.0    100.0  dynamic   nohla     auto       none     all      40     5        1e-6\n" % (tendwaveramp+tdurwave, dtdyn ))
     file.write("#\n")
 
 

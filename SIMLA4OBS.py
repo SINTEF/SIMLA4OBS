@@ -12,10 +12,11 @@ __maintainer__ = "Egil Giertsen"
 __email__ = "giertsen@sintef.no"
 
 import sys
-import pandas as pd
 import streamlit as st
 import multiprocessing as mp
 import os
+import pyraf as pr
+import pandas as pd
 from PIL import Image
 from S4O_Model import *
 from S4O_Product import *
@@ -32,13 +33,13 @@ def main():
 
 	#	Assign SIMLA4OBS version number
 	if 'S4O_versionID' not in st.session_state:
-		st.session_state.S4O_versionID = 'SIMLA4OBS version 0.3 / 2024'
+		st.session_state.S4O_versionID = 'SIMLA4OBS version 0.6 / 2024'
 
 	#	Set initial model path, directory and name
 	if 'modelMainTitle' not in st.session_state:
 		st.session_state.modelMainTitle = 'SIMLA4OBS Test Case 01'
 	if 'modelFilePath' not in st.session_state:
-		st.session_state.modelFilePath = 'C:/Users/vegardl/Documents/SIMLA4OBS/case1.s4o'
+		st.session_state.modelFilePath = ''
 	if 'modelFileDir' not in st.session_state:
 		st.session_state.modelFileDir = '.\\'
 	if 'modelFileName' not in st.session_state:
@@ -60,11 +61,11 @@ def main():
 
 	#	Initialize SIMLA4OBS and SIMLA global parameters
 	if 'SIMLA4OBS_path' not in st.session_state:
-		st.session_state.SIMLA4OBS_path = 'C:/302004604-simla/deepline/streamlit/'
+		st.session_state.SIMLA4OBS_path = 'P:/Ocean/SIMLA4OBS'
 		sys.path.append(st.session_state.SIMLA4OBS_path)
 	if 'SIMLA_HOME' not in st.session_state:
 		#	Set the SIMLA_HOME and HLALIB_PATH environment variables
-		st.session_state.SIMLA_HOME = 'C:/Program Files/SIMLA-3.23.2'
+		st.session_state.SIMLA_HOME = 'C:/SINTEFOcean/SIMLA/SIMLA-3.25.0-win64'
 		st.session_state.HLALIB_PATH = st.session_state.SIMLA_HOME + '/bin/HLALib.jar'
 		os.environ['SIMLA_HOME'] = st.session_state.SIMLA_HOME
 		os.environ['HLALIB_PATH'] = st.session_state.HLALIB_PATH
@@ -82,7 +83,11 @@ def main():
 		st.session_state.SIMLA_EXE = st.session_state.SIMLA_HOME + '/bin/simla.exe'		
 		st.session_state.DYNPOST_EXE = st.session_state.SIMLA_HOME + '/bin/dynpost.exe'
 
-	#	Initialize addiitonal global application parameters
+	#	Assign nstep_dynres as global parameter
+	if 'SIMLA_nstep_dynres' not in st.session_state:
+		st.session_state.SIMLA_nstep_dynres = int(0)
+
+	#	Initialize additional global application parameters
 	if 'CPU_count' not in st.session_state:
 		st.session_state.CPU_count = mp.cpu_count()
 	if 'maxRunsPB' not in st.session_state:
@@ -106,15 +111,17 @@ def main():
 
 	#	Initialize run type and extended print switch
 	if 'FakeRuns' not in st.session_state:
-		st.session_state.FakeRuns = True
+		st.session_state.FakeRuns = False
 	if 'ExtendedPrint' not in st.session_state:
-		st.session_state.ExtendedPrint = True
+		st.session_state.ExtendedPrint = False
 
 	#	Initialize analysis check boxes
 	if 'GenerateInputs' not in st.session_state:
 		st.session_state.GenerateInputs = True
 	if 'RunAnalyses' not in st.session_state:
 		st.session_state.RunAnalyses = True
+	if 'ResultsCalculated' not in st.session_state:
+		st.session_state.ResultsCalculated = False
 
 	#	Initialize options in selectboxes
 	if 'SeabedOptions' not in st.session_state:
@@ -129,6 +136,17 @@ def main():
 	if 'WaveSpreadingOptions' not in st.session_state:
 		st.session_state.WaveSpreadingOptions = ['Long-crested', 'Short-crested']
 		st.session_state.WaveSpreadingValues  = ['long'        , 'short'        ]
+	if 'TSResultOptions' not in st.session_state:
+		st.session_state.TSResultOptions = ['None'                            ,
+											'Seabed contact force y-dir [N/m]', 'Seabed contact force z-dir [N/m]', 'Hydrodynamic load y-dir [N/m]',
+											'Hydrodynamic load z-dir [N/m]'   , 'Displacement y-dir [m]'          , 'Soil penetration z-dir [m]'   ]
+		st.session_state.TSResultIDs     = [ 0                                ,
+											 1                                ,  2                                ,  3                             ,
+											 4                                ,  5                                ,  6                             ]
+		st.session_state.TSLineColors    = ['red'    ,'blue'    , 'green'  , 'black'  , 'gray'   , 'purple', 'orange', 'pink'     , 'brown' , 'cyan'  ,
+											'magenta','lime'    , 'maroon' , 'navy'   , 'olive'  , 'teal'  , 'aqua'  , 'fuchsia'  , 'gold'  , 'indigo',
+											'ivory'  , 'khaki'  ,'lavender', 'plum'   , 'salmon' , 'sienna', 'tan'   , 'turquoise', 'violet']
+		st.session_state.TSLineTypes     = ['solid'  , 'dashed' , 'dotted' , 'dotdash', 'dashdot']
 
 	#	Assign default values
 	if 'df_Product' not in st.session_state:
@@ -162,8 +180,8 @@ def main():
 	S4O_Task = st.sidebar.selectbox('Select Task :', S4O_Options)
 	
 	# Repository for images used on Dashboard
-	path_images = st.session_state.SIMLA4OBS_path + '/images'
-	image = Image.open(path_images + '/simla4obs.png')
+	path_images = st.session_state.SIMLA4OBS_path
+	image = Image.open(path_images + '/s4oimg.png')
 	st.sidebar.image(image)
 
 #	Update SIMLA4OBS dashboard with task information
@@ -175,11 +193,11 @@ def main():
 
 		st.session_state.df_Product,st.session_state.Product_OK = S4O_Product()
 
-	elif (S4O_Task =='SEABED'):			#	Reads seabed data into pandas dataframee
+	elif (S4O_Task =='SEABED'):			#	Reads seabed data into pandas dataframe
 
 		st.session_state.df_Seabed,st.session_state.Seabed_OK = S4O_Seabed()
 
-	elif (S4O_Task =='ENVIRONMENT'):	#	Reads enviromental data into pandas dataframee
+	elif (S4O_Task =='ENVIRONMENT'):	#	Reads enviromental data into pandas dataframe
 
 		st.session_state.df_Environment,st.session_state.Environment_OK = S4O_Environment()
 

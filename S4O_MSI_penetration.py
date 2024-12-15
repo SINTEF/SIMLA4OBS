@@ -1,10 +1,10 @@
 import numpy as np
 
 
-def penetration(  submass_lay ,  diam         ,  EI           ,  
-                  T0          ,  rho_sea      ,  gamd_sand    ,
-                  gamd_clay   ,  gams_drain   ,  gams_undrain ,
-                  su_clay     ,  su_z_undrain ,  kz_const     ,  
+def penetration(  submass_lay ,  diam         ,  EI            ,  
+                  T0          ,  rho_sea      ,  gamd_sand     ,
+                  gamd_clay   ,  gams_z_drain ,  gams_z_undrain,
+                  su_clay     ,  su_z_undrain ,  kz_const      ,  
                   gacc        ,  imodz        ):
 
     # Verley & Sotberg
@@ -37,17 +37,17 @@ def penetration(  submass_lay ,  diam         ,  EI           ,
         return uz
     
     # NGI drained soil
-    def ngi_drain( diam, gams_drain, Fz ):
+    def ngi_drain( diam, gams_z_drain, Fz ):
 
         a = 0.09
         b = 0.75
 
-        uz = a*diam*(Fz/gams_drain/diam**2)**b
+        uz = a*diam*(Fz/gams_z_drain/diam**2)**b
 
         return uz
 
     # NGI undrained soil / DNV model 2 undrained soil
-    def ngi_undrain( diam, gams_undrain, su_z_undrain, Fz ):
+    def ngi_undrain( diam, gams_z_undrain, su_z_undrain, Fz ):
 
         uz = 0.0          #   Start at uz=0.0 to avoid diverging Newton-Raphson
         zr_tol = 1e-12
@@ -113,12 +113,12 @@ def penetration(  submass_lay ,  diam         ,  EI           ,
                 dAp_dz = diam
 
 
-            r1 = e*(gams_undrain*Ap/diam/su_z_undrain)**f
-            r2 = e*f*(gams_undrain*Ap/diam/su_z_undrain)**(f-1.0)
+            r1 = e*(gams_z_undrain*Ap/diam/su_z_undrain)**f
+            r2 = e*f*(gams_z_undrain*Ap/diam/su_z_undrain)**(f-1.0)
 
             # Stiffness from gams-term
-            kz2 = r2*gams_undrain*dAp_dz
-            kz3 = -r2*gams_undrain*Ap/su_z_undrain*dSu_dz
+            kz2 = r2*gams_z_undrain*dAp_dz
+            kz3 = -r2*gams_z_undrain*Ap/su_z_undrain*dSu_dz
             kz4 = r1*diam*dSu_dz
 
             # Total stiffness
@@ -154,16 +154,16 @@ def penetration(  submass_lay ,  diam         ,  EI           ,
 
         Fz = submass_lay*gacc*klay
 
-        # 1: 'V&S Sand', 2: 'V&L Clay', 3: 'NGI Drained', 4: 'NGI Undrained/DNV Model 2 Undrained', 5: 'Constant stiffness']
+        # 1: 'V&S Sand', 2: 'V&L Clay', 3: 'NGI Drained', 4: 'NGI Undrained', 5: 'DNV Model 2 Undrained', 6: 'Rock / Constant stiffness']
         if imodz==1:
             uz_ini = sand( diam, gamd_sand, rho_sea, gacc, Fz )
         elif imodz==2:
             uz_ini = clay( diam, gamd_clay, su_clay, Fz )
         elif imodz==3:
-            uz_ini = ngi_drain( diam, gams_drain, Fz )
-        elif imodz==4:
-            uz_ini = ngi_undrain( diam, gams_undrain, su_z_undrain, Fz )
-        elif imodz==5:
+            uz_ini = ngi_drain( diam, gams_z_drain, Fz )
+        elif imodz==4 or imodz == 5:
+            uz_ini = ngi_undrain( diam, gams_z_undrain, su_z_undrain, Fz )
+        elif imodz==6:
             uz_ini = Fz/kz_const
 
         if iter==1:
@@ -180,9 +180,3 @@ def penetration(  submass_lay ,  diam         ,  EI           ,
 
 
     return uz_ini
-
-
-
-
-
-

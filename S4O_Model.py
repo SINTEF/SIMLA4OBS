@@ -32,6 +32,9 @@ def S4O_Model():
 	st.session_state.modelMainTitle = st.text_input(" ", value=st.session_state.modelMainTitle)
 	st.write("---")
 
+	#	Set ResultsCalculated to False 
+	st.session_state.ResultsCalculated = False
+
 	#	Set Streamlit subtitle
 	st.subheader('Open or save model :')
 
@@ -40,7 +43,7 @@ def S4O_Model():
 	msave = st.button("Save", key=None, help="Save model to the current .s4o file")
 	msaveas = st.button("Save As...", key=None, help="Save the current model to a new .s4o file")
 
-	if   mopen:
+	if mopen:
 		selected_file_path = S4O_select_file2open()
 		selected_file_dir = os.path.dirname(selected_file_path)
 		selected_file_name = os.path.splitext(os.path.basename(selected_file_path))[0]
@@ -48,7 +51,10 @@ def S4O_Model():
 		st.session_state.modelFileDir = selected_file_dir
 		st.session_state.modelFileName = selected_file_name
 
-		S4O_Read_Model()
+		if selected_file_path != '' and os.path.exists(selected_file_path):
+			S4O_Read_Model()
+		else:
+			st.error("File does not exist!", icon="🚨")
 
 	elif msave:
 		file_path = st.session_state.modelFilePath
@@ -65,14 +71,16 @@ def S4O_Model():
 		st.session_state.modelFileDir = selected_file_dir
 		st.session_state.modelFileName = selected_file_name
 
-		st.session_state.df_Execution.iloc[2,1] = st.session_state.currentMaxRel
+		st.session_state.df_Execution.iloc[3,1] = st.session_state.currentMaxRel
 
-		S4O_Generate_Seed_Numbers()
-
-		S4O_Write_Model()
+		if selected_file_path != '':
+			S4O_Generate_Seed_Numbers()
+			S4O_Write_Model()
+		else:
+			st.error("File does not exist!", icon="🚨")
 
 	#	Change working directory to current directory
-	os.chdir(st.session_state.modelFileDir)
+	if os.path.exists(st.session_state.modelFilePath): os.chdir(st.session_state.modelFileDir)
 
 	st.session_state.Model_OK = True
 
@@ -116,7 +124,7 @@ def S4O_select_file2saveas():
 
 def S4O_Generate_Seed_Numbers():
 
-	numseeds = int(st.session_state.df_Execution.iloc[2,1])
+	numseeds = int(st.session_state.df_Execution.iloc[3,1])
 
 	st.session_state.listOfSeedNumbers = []
 	for i in range(numseeds):
@@ -133,27 +141,32 @@ def S4O_Write_Model():
 	f = open(st.session_state.modelFilePath, "w")
 
 	#	Program version
+	f.write("# SIMLA4OBS program version\n")
 	f.write("%s\n" % ( st.session_state.S4O_versionID ) )
 
 	#	Model parameters
+	f.write("# Model parameters\n")
 	f.write("%s\n" % ( st.session_state.modelMainTitle ) )
 
 	#	Product parameters
+	f.write("# Product parameters\n")
 	nvals = st.session_state.df_Product.shape[0]
 	for ndx in range(nvals):
 		f.write("\t%.6e" % ( st.session_state.df_Product.iloc[ndx,1] ) )
 	f.write("\n")
 
 	#	Seabed parameters
+	f.write("# Seabed parameters\n")
 	nvals = st.session_state.df_Seabed.shape[0]
 	for ndx in range(nvals):
-		if ndx == 0 or ndx == 10:
+		if ndx == 0 or ndx == 9 or ndx == 14:
 			f.write("\t%i" % ( st.session_state.df_Seabed.iloc[ndx,1] ) )
 		else:
 			f.write("\t%.6e" % ( st.session_state.df_Seabed.iloc[ndx,1] ) )
 	f.write("\n")
 
 	#	Environment parameters
+	f.write("# Environment parameters\n")
 	nvals = st.session_state.df_Environment.shape[0]
 	for ndx in range(nvals):
 		if ndx == 4 or ndx == 6 or ndx == 7:
@@ -163,16 +176,18 @@ def S4O_Write_Model():
 	f.write("\n")
 
 	#	Execution parameters
+	f.write("# Execution parameters\n")
 	nvals = st.session_state.df_Execution.shape[0]
 	for ndx in range(nvals):
-		if ndx == 2 :
+		if ndx == 3 :
 			f.write("\t%i" % ( st.session_state.df_Execution.iloc[ndx,1] ) )
 		else:
 			f.write("\t%.6e" % ( st.session_state.df_Execution.iloc[ndx,1] ) )
 	f.write("\n")
 
 	#	Seed numbers
-	nvals = int(st.session_state.df_Execution.iloc[2,1])
+	f.write("# Seed numbers\n")
+	nvals = int(st.session_state.df_Execution.iloc[3,1])
 	for ndx in range(nvals):
 		f.write("\t%i" % ( st.session_state.listOfSeedNumbers[ndx] ) )
 	f.write("\n")
@@ -205,7 +220,10 @@ def S4O_Read_Model():
 		cline = lines[iline]
 		cline = cline.strip()
 
-		if iline == 0:
+		if iline == 0 or iline == 2 or iline == 4 or iline == 6 or iline == 8 or iline == 10 or iline == 12:
+			#	Comment line, do nothing
+			continue
+		elif iline == 1:
 			#	Check and store program version
 			version = cline
 			if version != st.session_state.S4O_versionID:
@@ -214,7 +232,7 @@ def S4O_Read_Model():
 			else:
 				st.session_state.S4O_versionID = version
 
-		elif iline == 1:
+		elif iline == 3:
 			#	Store model title
 			st.session_state.modelMainTitle = cline
 
@@ -225,7 +243,7 @@ def S4O_Read_Model():
 			columns = cline.split()
 			nvals = len(columns)
 
-			if iline == 2:
+			if iline == 5:
 				#	Check number of Product parameters on file
 				pvals = st.session_state.df_Product.shape[0]
 				if nvals != pvals:
@@ -235,7 +253,7 @@ def S4O_Read_Model():
 				for ndx in range(nvals):
 					st.session_state.df_Product.iloc[ndx,1] = float(columns[ndx])
 
-			elif iline == 3:
+			elif iline == 7:
 				#	Check number of Seabed parameters on file
 				pvals = st.session_state.df_Seabed.shape[0]
 				if nvals != pvals:
@@ -243,12 +261,12 @@ def S4O_Read_Model():
 					return
 				#	Store Seabed parameters
 				for ndx in range(nvals):
-					if ndx == 0 or ndx == 10:
+					if ndx == 0 or ndx == 9 or ndx == 14:
 						st.session_state.df_Seabed.iloc[ndx,1] = int(columns[ndx])
 					else:
 						st.session_state.df_Seabed.iloc[ndx,1] = float(columns[ndx])
 
-			elif iline == 4:
+			elif iline == 9:
 				#	Check number of Environment parameters on file
 				pvals = st.session_state.df_Environment.shape[0]
 				if nvals != pvals:
@@ -261,7 +279,7 @@ def S4O_Read_Model():
 					else:
 						st.session_state.df_Environment.iloc[ndx,1] = float(columns[ndx])
 
-			elif iline == 5:
+			elif iline == 11:
 				#	Check number of Execution parameters on file
 				pvals = st.session_state.df_Execution.shape[0]
 				if nvals != pvals:
@@ -269,15 +287,15 @@ def S4O_Read_Model():
 					return
 				#	Store Execution parameters
 				for ndx in range(nvals):
-					if ndx == 2 :
+					if ndx == 3 :
 						st.session_state.df_Execution.iloc[ndx,1] = int(columns[ndx])
 						st.session_state.currentMaxRel = int(columns[ndx])
 					else:
 						st.session_state.df_Execution.iloc[ndx,1] = float(columns[ndx])
 
-			elif iline == 6:
+			elif iline == 13:
 				#	Check number of Seed values on file
-				pvals = int(st.session_state.df_Execution.iloc[2,1])
+				pvals = int(st.session_state.df_Execution.iloc[3,1])
 				if nvals != pvals:
 					st.error("Number of Seed values on file (" + str(nvals) + ") is different from the expected number (" + str(pvals) + ")!", icon="🚨")
 					return
@@ -288,6 +306,7 @@ def S4O_Read_Model():
 
 			else:
 				st.error("Unexpected number of lines (" + str(nlines) + ") in model file!", icon="🚨")
+				return
 
 	st.rerun()
 

@@ -23,7 +23,7 @@ def S4O_Product():
 	st.header('Product parameters')
 
 	#	Update Dashboard layout
-	Echo_Inputs 	= st.sidebar.checkbox('Echo input parameters',value=True)
+	Echo_Inputs = st.sidebar.checkbox('Echo input parameters',value=True)
 
 	#	Assign product parameters
 	if 'df_Product' not in st.session_state:
@@ -31,19 +31,17 @@ def S4O_Product():
 	else:
 		Od = float(st.session_state.df_Product.iloc[0,1])
 		Sm = float(st.session_state.df_Product.iloc[1,1])
-		Bs = float(st.session_state.df_Product.iloc[2,1])
-		MGt = float(st.session_state.df_Product.iloc[3,1])
-		MGd = float(st.session_state.df_Product.iloc[4,1])
+		MGt = float(st.session_state.df_Product.iloc[2,1])
+		MGd = float(st.session_state.df_Product.iloc[3,1])
 	
 	# Prompt for product parameters
 	Od = st.number_input("Outer diameter [m] :", min_value=0.0, max_value=2.0, value=Od, format="%.4f")
 	Sm = st.number_input("Submerged mass [kg/m] :", min_value=0.0, value=Sm, format="%.2f")
-	Bs = st.number_input("Bending stiffness [Nm2] :", step=1e6, value=Bs, format="%.4e")
 	st.subheader('Marine growth')
 	MGt = st.number_input("Thickness [m] :", value=MGt, format="%.4f")
 	MGd = st.number_input("Density [kg/m3] :", value=MGd, format="%.2f")
 	
-	Pdata = [['Outer diameter [m] :', Od], ['Submerged mass [kg/m] :', Sm], ['Bending stiffness [Nm2] :', Bs],
+	Pdata = [['Outer diameter [m] :', Od], ['Submerged mass [kg/m] :', Sm],
 			 ['Thickness [m] :', MGt], ['Density [kg/m3] :', MGd]]
 	st.session_state.df_Product = pd.DataFrame(Pdata, columns=['Product parameter','Value'])
 
@@ -70,13 +68,12 @@ def S4O_Product_Defaults ():
 	if 'df_Product' not in st.session_state:
 		Od = 0.190
 		Sm = 36.0
-		Bs = 2.4e7
 		MGt = 0.01
 		MGd = 1265.0
 	else:
 		st.warning('S4O_Product_Defaults : Should not be here!', icon="⚠️")
 
-	Pdata = [['Outer diameter [m] :', Od], ['Submerged mass [kg/m] :', Sm], ['Bending stiffness [Nm2] :', Bs],
+	Pdata = [['Outer diameter [m] :', Od], ['Submerged mass [kg/m] :', Sm],
 			 ['Thickness [m] :', MGt], ['Density [kg/m3] :', MGd]]
 	st.session_state.df_Product = pd.DataFrame(Pdata, columns=['Product parameter','Value'])
 	

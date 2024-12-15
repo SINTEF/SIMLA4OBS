@@ -42,37 +42,41 @@ def S4O_MakeSIMLAInput(sifname, irun):
     diam = float(st.session_state.df_Product.iloc[0,1])             #   Outer diameter (without marine growth) [m]
     submass = float(st.session_state.df_Product.iloc[1,1])          #   Submerged mass [kg/m]
     mass = submass + np.pi*(diam**2/4)*rho_sea                      #   Structural mass [kg/m]
-    EI = float(st.session_state.df_Product.iloc[2,1])               #   Bending stiffness, for klay-calculations [Nm2]
     EI_dum = 0.0                                                    #   Bending stiffness [Nm2] (dummy value)
     EA_dum = 1.0                                                    #   Axial stiffness [N] (dummy value)
     GJ_dum = 0.0                                                    #   Torsion stiffness [Nm2] (dummy value)
-    th_margrow = float(st.session_state.df_Product.iloc[3,1])       #   Thickness of marine growth [m]
-    rho_margrow = float(st.session_state.df_Product.iloc[4,1])      #   Density of marine growth [kg/m3]
+    th_margrow = float(st.session_state.df_Product.iloc[2,1])       #   Thickness of marine growth [m]
+    rho_margrow = float(st.session_state.df_Product.iloc[3,1])      #   Density of marine growth [kg/m3]
 
     #   Assign SEABED parameters
-    #   Pipe-soil interaction (PSI) model
     #   Y-direction PSI model (imody) - 1: 'V&S Sand', 2: 'V&L Clay', 3: 'NGI Drained', 4: 'NGI Undrained', 5: 'DNV Model 2 Undrained', 6: 'Rock / Coulomb friction']
-    #   Z-direction PSI model (imodz) - 1: 'V&S Sand', 2: 'V&L Clay', 3: 'NGI Drained', 4: 'NGI Undrained/DNV Model 2 Undrained', 5: 'Constant stiffness']
-    ndx     = int(st.session_state.df_Seabed.iloc[0,1])
+    ndx   = int(st.session_state.df_Seabed.iloc[0,1])
     imody = st.session_state.SeabedValues[ndx]                      #   Y-direction PSI model
-    imodz = 1                                                       #   Z-direction PSI model
     gamd_sand = float(st.session_state.df_Seabed.iloc[1,1])         #   Sand dry unit weight [N/m3]
     su_clay = float(st.session_state.df_Seabed.iloc[2,1])           #   Undrained shear strength [N/m2] 
     gamd_clay = float(st.session_state.df_Seabed.iloc[3,1])         #   Clay dry unit weight [N/m3]
     gams_drain = float(st.session_state.df_Seabed.iloc[4,1])        #   Drained submerged unit weight [N/m3]
-    su_y_undrain = float(st.session_state.df_Seabed.iloc[5,1])      #   Undrained shear strength y-dir [N/m2] 
-    su_z_undrain = float(st.session_state.df_Seabed.iloc[6,1])      #   Undrained shear strength z-dir [N/m2] 
-    gams_undrain = float(st.session_state.df_Seabed.iloc[7,1])      #   Undrained submerged unit weight [N/m3]
-    muy     = float(st.session_state.df_Seabed.iloc[8,1])           #   Coulomb friction factor [-]
-    kstick  = float(st.session_state.df_Seabed.iloc[9,1])           #   Elastic stick stiffness [Nm2]
-    ndx     = int(st.session_state.df_Seabed.iloc[10,1])
-    ipenmod = st.session_state.PenetrationValues[ndx]               #   Initial penetration mode : 1=Specify, 2=Calculate
-    uz_ini = float(st.session_state.df_Seabed.iloc[11,1])           #   Initial penetration, specified [m]
-    T0 = float(st.session_state.df_Seabed.iloc[12,1])               #   Horizontal lay tension, for klay-calculations [N]
+    su_y_undrain = float(st.session_state.df_Seabed.iloc[5,1])      #   Undrained shear strength [N/m2] 
+    gams_undrain = float(st.session_state.df_Seabed.iloc[6,1])      #   Undrained submerged unit weight [N/m3]
+    muy     = float(st.session_state.df_Seabed.iloc[7,1])           #   Coulomb friction factor [-]
+    kstick  = float(st.session_state.df_Seabed.iloc[8,1])           #   Elastic stick stiffness [N/m2]
 
-    submass_lay = submass   # Legg til som ny parameter UI !!!!!!!!!!!!!!!
-    kz_const = 1000.0       # Legg til som ny parameter UI !!!!!!!!!!!!!!!
- 
+    #   Z-direction PSI model (imodz) - 1: 'V&S Sand', 2: 'V&L Clay', 3: 'NGI Drained', 4: 'NGI Undrained', 5: 'DNV Model 2 Undrained', 6: 'Rock / Constant stiffness']
+    ndx   = int(st.session_state.df_Seabed.iloc[9,1])
+    imodz = st.session_state.SeabedValues[ndx]                      #   Z-direction PSI model
+    gams_z_drain = float(st.session_state.df_Seabed.iloc[10,1])     #   Drained submerged unit weight z-dir [N/m3] 
+    su_z_undrain = float(st.session_state.df_Seabed.iloc[11,1])     #   Undrained shear strength z-dir [N/m2] 
+    gams_z_undrain = float(st.session_state.df_Seabed.iloc[12,1])   #   Undrained submerged unit weight z-dir [N/m3] 
+    kz_const = float(st.session_state.df_Seabed.iloc[13,1])         #   Elastic stiffness z-dir [N/m2]
+
+    #   Initial penetration
+    ndx     = int(st.session_state.df_Seabed.iloc[14,1])
+    ipenmod = st.session_state.PenetrationValues[ndx]               #   Initial penetration mode : 1=Specify, 2=Calculate
+    uz_ini = float(st.session_state.df_Seabed.iloc[15,1])           #   Initial penetration, specified [m]
+    T0 = float(st.session_state.df_Seabed.iloc[16,1])               #   Horizontal lay tension, for klay-calculations [N]
+    submass_lay = float(st.session_state.df_Seabed.iloc[17,1])      #   Submerged mass during lay [kg/m]
+    EI = float(st.session_state.df_Seabed.iloc[18,1])               #   Bending stiffness, for klay-calculations [Nm2]
+
     #   Assign ENVIRONMENT parameters
     zseabed = -float(st.session_state.df_Environment.iloc[0,1])     #   Z-cordinate of seafloor [m] (-[Water depth])
     Hs = float(st.session_state.df_Environment.iloc[1,1])           #   Significant wave height [m]
@@ -93,17 +97,15 @@ def S4O_MakeSIMLAInput(sifname, irun):
 
     #   Assign EXECUTION parameters
 
-    tstart_uzini = 0.0   #   Start time for ramping initial penetration
-    tend_static = 1.0    #   End of static analysis and ramping of initial penetration, also used as reference time for initial penetration [s] 
-    dtdyn = 0.025        #   Time step size in dynamic analysis. Should be user-defined!!!!
+    tstart_uzini = 0.0                                              #   Start time for ramping initial penetration.
+    tend_static = 1.0                                               #   End of static analysis and ramping of initial penetration, also used as reference time for initial penetration [s].
+    dtdyn = float(st.session_state.df_Execution.iloc[0,1])          #   Time step size in dynamic analysis.
 
     #   Total wave duration = (Sea state duration [h])*3600 + Wave load ramping time [s]  +  static load ramping time [s]
-    tendwaveramp = float(st.session_state.df_Execution.iloc[1,1])  +  tend_static
-    tdurwave = float(st.session_state.df_Execution.iloc[0,1])*3600.0 + float(st.session_state.df_Execution.iloc[1,1])
+    tendwaveramp = float(st.session_state.df_Execution.iloc[2,1])  +  tend_static
+    tdurwave = float(st.session_state.df_Execution.iloc[1,1])*3600.0 + float(st.session_state.df_Execution.iloc[2,1])
     
-
-    iwaveseed=1212121212   # Error. Not set correctly
-    #iwaveseed = st.session_state.listOfSeedNumbers[irun-1]
+    iwaveseed = st.session_state.listOfSeedNumbers[irun-1]
     wavetype = "irregular"
     dtwave = 0.5                                #   Time increment for wave kinematics
     tstartwave = tend_static                    #   Start time DROPS LOAD
@@ -155,7 +157,6 @@ def S4O_MakeSIMLAInput(sifname, irun):
     else:
         ky_inispring  = kstick
 
-
     #  Estimate dynamic z-direction stiffness that ensures quasi-static response in z-direction.
     #  Assume minimum load period T_load=1.0 second and that associated DAF=1.01 gives quasi-static response. Assume maximum marine growth to maximize z-dir stiffness.
     DAF = 1.01
@@ -188,7 +189,7 @@ def S4O_MakeSIMLAInput(sifname, irun):
         uz_ini = penetration( 
                  submass_lay ,  diam          ,  EI            ,  
                  T0          ,  rho_sea       ,  gamd_sand     ,
-                 gamd_clay   ,  gams_drain    ,  gams_undrain  ,
+                 gamd_clay   ,  gams_z_drain  ,  gams_z_undrain,
                  su_clay     ,  su_z_undrain  ,  kz_const      ,  
                  gacc        ,  imodz         )
 
@@ -245,5 +246,8 @@ def S4O_MakeSIMLAInput(sifname, irun):
              sifname         )
 
     file.close()
+
+    #   Update global parameter nstep_dynres
+    st.session_state.SIMLA_nstep_dynres = int(nstep_dynres)
 
     return
