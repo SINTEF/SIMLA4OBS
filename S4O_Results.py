@@ -6,15 +6,16 @@ These functions initiates and updates the df_Results pandas dataframe.
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
-__version__ = "2024"
+__version__ = "2025-03-27"
 __maintainer__ = "Egil Giertsen"
 __email__ = "giertsen@sintef.no"
 
 import streamlit as st
 import os
 import random
+import math
 import numpy as np
-import pyraf as pr
+from rafina import pyraf as pr
 import pandas as pd
 from bokeh.plotting import figure
 from bokeh.models import Range1d
@@ -61,8 +62,8 @@ def S4O_Results():
 		st.write("Execution parameters :")
 		st.write(st.session_state.df_Execution)
 
-	#	If fake runs, generate results from pre-generated DYNPOST files
-	if st.session_state.FakeRuns: S4O_Generate_Results(nruns)
+	#	If simulate runs, generate results from pre-generated DYNPOST files
+	if st.session_state.SimulateRuns: S4O_Generate_Results(nruns)
 
 	#	Check if SIMLA has already been executed, and if yes generate results from existing DYNPOST files
 	if not st.session_state.ResultsCalculated and S4O_CheckIfSIMLARunsExist(nruns):
@@ -154,7 +155,7 @@ def S4O_Generate_Results(lrun):
 		try:
 			dynobj = pr.Dyn(dynfile)
 		except:
-			st.error("Failed to assign " + dynfile + "as a DYNPOST object", icon="🚨")
+			st.error("Failed to assign " + dynfile + " as a DYNPOST object", icon="🚨")
 			raise
 
 		#	Get time series max and min values for the current run
@@ -250,7 +251,6 @@ def S4O_Show_Results_Plot():
 	meanlist = []
 	stdlist = []
 	m1stdlist = []
-	maxmalist = []
 
 	nruns = st.session_state.df_Results.shape[0]
 	for irun in range(nruns):
@@ -258,13 +258,12 @@ def S4O_Show_Results_Plot():
 		meanlist.append(float(st.session_state.df_Results.iloc[irun,1]))
 		stdlist.append(float(st.session_state.df_Results.iloc[irun,2]))
 		m1stdlist.append(float(st.session_state.df_Results.iloc[irun,4]))
-		maxmalist.append(float(st.session_state.df_Results.iloc[irun,5]))
-
-	#	Assign value for absolute maxima
-	mval = np.max(maxmalist)
 
 	#	Assign design value
 	dval = float(st.session_state.df_Execution.iloc[5,1])*float(st.session_state.df_Product.iloc[0,1])
+
+	#	Assign maximum y value for all result curves
+	mval = max(np.max(meanlist), np.max(m1stdlist), dval)
 
 	#	Build and show bokeh plot
 	st.write("---")
@@ -284,7 +283,7 @@ def S4O_Show_Results_Plot():
 	plt.xaxis.axis_label_text_font_size = "12pt"
 	plt.yaxis.axis_label_text_font_size = "12pt"
 	plt.x_range = Range1d(0, nruns+1)
-	plt.y_range = Range1d(0, max(dval, mval))
+	plt.y_range = Range1d(0, math.ceil(mval))
 	st.bokeh_chart(plt, use_container_width=True)
 
 	return
@@ -385,7 +384,7 @@ def S4O_Show_TS_Plot():
 		try:
 			dynobj = pr.Dyn(dynfile)
 		except:
-			st.error("Failed to assign " + dynfile + "as a DYNPOST object", icon="🚨")
+			st.error("Failed to assign " + dynfile + " as a DYNPOST object", icon="🚨")
 			raise
 
 		#	Get the time series (time=x, value=y), maximum value + time and minimum value + time for the current run from the specified time series

@@ -6,7 +6,7 @@ This function creates a SIMLA input file for the SIMLA4OBS application.
 __author__ = "Vegard Longva"
 __credits__ = ["Egil Giertsen"]
 __license__ = "GPLv3"
-__version__ = "2024"
+__version__ = "2025-03-14"
 __maintainer__ = "Egil Giertsen, Vegard Longva"
 __email__ = "giertsen@sintef.no"
 

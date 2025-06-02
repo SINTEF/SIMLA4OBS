@@ -3,7 +3,7 @@ To install the SIMLA4OBS (S4O) application on your PC please follow these steps:
 1. Make sure that you have a Python version installed on your computer
 2. Create a new folder (e.g. on your C: drive) where you want to store your copy of the SIMLA4OBS application
 3. Unzip your ZIP'ed SIMLA4OBS package onto the directory you created in step 2
-4. In the SIMLA4OBS.py file, edit the assignment of parameter "st.session_state.SIMLA4OBS_path" to point to the directory you created in step 2
+4. In the SIMLA4OBS.py file, edit the assignment of parameter "st.session_state.SIMLA4OBS_PATH" to point to the directory you created in step 2
 5. In the SIMLA4OBS.py file, edit the assignment of parameter "st.session_state.SIMLA_HOME" to point to the root directory of your SIMLA installation
 6. Make a command prompt window and move to the root of the directory created in step 2
 7. From the command prompt, create a Python virtual environment for your SIMLA4OBS application by running the command "python -m venv s4oenv"
@@ -11,3 +11,4 @@ To install the SIMLA4OBS (S4O) application on your PC please follow these steps:
 9. Install all the Python modules that SIMLA4OBS depend on by running the command "pip install -r s4o_requirements.txt"
 10. Run the command "streamlit run SIMLA4OBS.py" to start the SIMLA4OBS application, which then should pop up in your default web browser
 11. That's it!
+

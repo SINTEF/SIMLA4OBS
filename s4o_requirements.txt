@@ -66,7 +66,6 @@ Pygments==2.14.0
 Pympler==1.0.1
 pyparsing==3.0.9
 pyproj==3.6.0
-pyraf @ file:///./22_RAF_Utilities/pyraf-0.0.2-py311-none-win_amd64.whl
 pyrsistent==0.19.3
 pyshp==2.3.1
 PySocks==1.7.1
@@ -77,8 +76,10 @@ python-dateutil==2.8.2
 pytz==2022.7.1
 pytz-deprecation-shim==0.1.0.post0
 PyYAML==6.0
+rafina==0.0.6
 requests==2.28.2
 rich==13.3.2
+scipy==1.15.1
 scooby==0.7.2
 semver==2.13.0
 shapely==2.0.1

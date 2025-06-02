@@ -7,7 +7,7 @@ runs them and reads and reports the results from the executed analyses.
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
-__version__ = "2024"
+__version__ = "2025-06-02"
 __maintainer__ = "Egil Giertsen"
 __email__ = "giertsen@sintef.no"
 
@@ -15,7 +15,7 @@ import sys
 import streamlit as st
 import multiprocessing as mp
 import os
-import pyraf as pr
+from rafina import pyraf as pr
 import pandas as pd
 from PIL import Image
 from S4O_Model import *
@@ -33,7 +33,7 @@ def main():
 
 	#	Assign SIMLA4OBS version number
 	if 'S4O_versionID' not in st.session_state:
-		st.session_state.S4O_versionID = 'SIMLA4OBS version 0.6 / 2024'
+		st.session_state.S4O_versionID = 'SIMLA4OBS version 1.0 / 2025'
 
 	#	Set initial model path, directory and name
 	if 'modelMainTitle' not in st.session_state:
@@ -60,9 +60,9 @@ def main():
 		st.session_state.Results_OK = False
 
 	#	Initialize SIMLA4OBS and SIMLA global parameters
-	if 'SIMLA4OBS_path' not in st.session_state:
-		st.session_state.SIMLA4OBS_path = 'P:/Ocean/SIMLA4OBS'
-		sys.path.append(st.session_state.SIMLA4OBS_path)
+	if 'SIMLA4OBS_PATH' not in st.session_state:
+		st.session_state.SIMLA4OBS_PATH = 'P:/Ocean/SIMLA4OBS'
+		sys.path.append(st.session_state.SIMLA4OBS_PATH)
 	if 'SIMLA_HOME' not in st.session_state:
 		#	Set the SIMLA_HOME and HLALIB_PATH environment variables
 		st.session_state.SIMLA_HOME = 'C:/SINTEFOcean/SIMLA/SIMLA-3.25.0-win64'
@@ -91,7 +91,7 @@ def main():
 	if 'CPU_count' not in st.session_state:
 		st.session_state.CPU_count = mp.cpu_count()
 	if 'maxRunsPB' not in st.session_state:
-		st.session_state.maxRunsPB = int(st.session_state.CPU_count/3)
+		st.session_state.maxRunsPB = int(st.session_state.CPU_count/2)
 	if 'noBlocksToRun' not in st.session_state:
 		st.session_state.noBlocksToRun = 0
 	if 'currentRunCount' not in st.session_state:
@@ -110,8 +110,8 @@ def main():
 		st.session_state.simlaProgressDelta = 0
 
 	#	Initialize run type and extended print switch
-	if 'FakeRuns' not in st.session_state:
-		st.session_state.FakeRuns = False
+	if 'SimulateRuns' not in st.session_state:
+		st.session_state.SimulateRuns = False
 	if 'ExtendedPrint' not in st.session_state:
 		st.session_state.ExtendedPrint = False
 
@@ -180,7 +180,7 @@ def main():
 	S4O_Task = st.sidebar.selectbox('Select Task :', S4O_Options)
 	
 	# Repository for images used on Dashboard
-	path_images = st.session_state.SIMLA4OBS_path
+	path_images = st.session_state.SIMLA4OBS_PATH
 	image = Image.open(path_images + '/s4oimg.png')
 	st.sidebar.image(image)
 
@@ -208,32 +208,6 @@ def main():
 	elif (S4O_Task == 'RESULTS'):		#	Reads results into pandas dataframe
 
 		st.session_state.df_Results,st.session_state.Results_OK = S4O_Results()
-
-#
-#	Save to EXCEL?
-#
-#	st.session_state.Export_to_EXCEL = st.sidebar.checkbox('Export data to EXCEL',value=False)
-	st.session_state.Export_to_EXCEL = False
-
-	if st.session_state.Export_to_EXCEL:
-
-		df_Info = pd.DataFrame(
-		    {'Pipe': ['Start', 'Stop'],
-		     'Latitude': [63.464, 63.4537, ],
-		     'Longitude': [9.935, 10.3756]})
-
-		with pd.ExcelWriter('SIMLA4OBS output.xlsx') as writer: 
-			df_Info.to_excel(writer, sheet_name='SIMLA4OBS route information')
-			if st.session_state.Product_OK:
-				st.session_state.df_Product.to_excel(writer, sheet_name='SIMLA4OBS Product')
-			if st.session_state.Seabed_OK:
-				st.session_state.df_Seabed.to_excel(writer, sheet_name='SIMLA4OBS Seabed')
-			if st.session_state.Environment_OK:
-				st.session_state.df_Environment.to_excel(writer, sheet_name='SIMLA4OBS Enviroment')
-			if st.session_state.Execution_OK:
-				st.session_state.df_Execution.to_excel(writer, sheet_name='SIMLA4OBS Execution')
-			if st.session_state.Results_OK:
-				st.session_state.df_Results.to_excel(writer, sheet_name='SIMLA4OBS Results')
 
 #
 # 	Execute main

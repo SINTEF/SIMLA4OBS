@@ -6,7 +6,7 @@ These functions initiates and updates the df_Model pandas dataframe.
 __author__ = "Egil Giertsen"
 __credits__ = [""]
 __license__ = "GPLv3"
-__version__ = "2024"
+__version__ = "2025-06-02"
 __maintainer__ = "Egil Giertsen"
 __email__ = "giertsen@sintef.no"
 
@@ -64,7 +64,7 @@ def S4O_Model():
 			st.error("File does not exist!", icon="🚨")
 
 	elif msaveas:
-		selected_file_path = S4O_select_file2saveas()
+		selected_file_path = CheckIfFileExtensionExist(S4O_select_file2saveas())
 		selected_file_dir = os.path.dirname(selected_file_path)
 		selected_file_name = os.path.splitext(os.path.basename(selected_file_path))[0]
 		st.session_state.modelFilePath = selected_file_path
@@ -179,7 +179,7 @@ def S4O_Write_Model():
 	f.write("# Execution parameters\n")
 	nvals = st.session_state.df_Execution.shape[0]
 	for ndx in range(nvals):
-		if ndx == 3 :
+		if ndx == 3 or ndx == 6 :
 			f.write("\t%i" % ( st.session_state.df_Execution.iloc[ndx,1] ) )
 		else:
 			f.write("\t%.6e" % ( st.session_state.df_Execution.iloc[ndx,1] ) )
@@ -290,6 +290,9 @@ def S4O_Read_Model():
 					if ndx == 3 :
 						st.session_state.df_Execution.iloc[ndx,1] = int(columns[ndx])
 						st.session_state.currentMaxRel = int(columns[ndx])
+					elif ndx == 6 :
+						st.session_state.df_Execution.iloc[ndx,1] = int(columns[ndx])
+						st.session_state.maxRunsPB = int(columns[ndx])
 					else:
 						st.session_state.df_Execution.iloc[ndx,1] = float(columns[ndx])
 
@@ -311,3 +314,23 @@ def S4O_Read_Model():
 	st.rerun()
 
 	return
+#
+#
+def CheckIfFileExtensionExist(existing_path):
+
+	#	Do nothing if existing file path is empty
+	if existing_path == '': return ''
+
+	#	Extract file base name and extension
+	base = os.path.splitext(existing_path)[0]
+	exte = os.path.splitext(existing_path)[1]
+
+	#	Check that a file extension exists, and if not assign it to '.s4o'
+	if exte == '': exte = '.s4o'
+
+	#	Assign new path
+	new_path = base + exte
+
+	return new_path
+#
+#

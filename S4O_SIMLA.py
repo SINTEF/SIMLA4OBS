@@ -6,7 +6,7 @@ These functions creates SIMLA input files, runs SIMLA and reads results.
 __author__ = "Egil Giertsen"
 __credits__ = [""]
 __license__ = "GPLv3"
-__version__ = "2024"
+__version__ = "2025-03-17"
 __maintainer__ = "Egil Giertsen"
 __email__ = "giertsen@sintef.no"
 
@@ -136,9 +136,9 @@ def S4O_Run_SIMLA():
 	if nrunscb > nrunsmax: nrunscb = nrunsmax
 	lrun = frun + nrunscb - 1
 
-	#	Fake SIMLA runs with the sleep command?
+	#	Simulate SIMLA runs with the sleep command?
 	if st.session_state.RunAnalyses:
-		if st.session_state.FakeRuns:
+		if st.session_state.SimulateRuns:
 			st.warning('Simulating ' + str(nblocks) + ' SIMLA blocks with the sleep command for runs 1 to ' + str(nrunsmax) + '!', icon="⚠️")
 		else:
 			st.info('Executing ' + str(nblocks) + ' SIMLA blocks for runs 1 to ' + str(nrunsmax) + '.')
@@ -152,18 +152,19 @@ def S4O_Run_SIMLA():
 	#	Loop over number of blocks to be run
 	while cblock <= nblocks:
 
-		if not st.session_state.FakeRuns: st.write('Executing SIMLA block number ' + str(cblock) + ' for runs ' + str(frun) + ' to ' + str(lrun) + '.')
+		if not st.session_state.SimulateRuns: st.write('Executing SIMLA block number ' + str(cblock) + ' for runs ' + str(frun) + ' to ' + str(lrun) + '.')
 
 		#	Create input files if the "Generate input files" check box is checked
 		if st.session_state.GenerateInputs: S4O_Create_Input_Files(frun, lrun)
 
 		#	Run the current SIMLA block
+		#	---------------------------
 		if st.session_state.RunAnalyses:
 
 			#	Run the SIMLA block if the "Run analyses" check box is checked
 			S4O_Run_SIMLA_Block(frun, lrun)
 
-		elif st.session_state.GenerateInputs and not st.session_state.RunAnalyses:
+		elif st.session_state.GenerateInputs and not st.session_state.RunAnalyses:			
 			#	Update the progress bar if only the "Generate input files" check box is checked
 			st.session_state.simlaProgressCurr += (lrun-frun+1)*st.session_state.simlaProgressDelta
 			st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
@@ -232,7 +233,7 @@ def S4O_Run_SIMLA_Block(frun, lrun):
 
 		if stillrunning: time.sleep(1)
 
-	if not st.session_state.FakeRuns and st.session_state.ExtendedPrint: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
+	if not st.session_state.SimulateRuns and st.session_state.ExtendedPrint: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
 
 	return
 #
@@ -244,9 +245,9 @@ def S4O_SIMLA_Subprocess_Open(irun):
 	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun)
 	os.chdir(cwd)
 
-	#	Run SIMLA or fake a SIMLA run with the sleep command?
-	if st.session_state.FakeRuns:
-		#	Assign a sleep command to fake a SIMLA run
+	#	Run SIMLA or simulate a SIMLA run with the sleep command?
+	if st.session_state.SimulateRuns:
+		#	Assign a sleep command to simulate a SIMLA run
 		s2w = random.randint(15,30)
 		runcmd = 'sleep(' + str(s2w) + ')'
 		if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
@@ -267,9 +268,9 @@ def S4O_DYNPOST_Subprocess_Open(irun):
 	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName + '/r' + str(irun)
 	os.chdir(cwd)
 
-	#	Run DYNPOST or fake a DYNPOST run with the sleep command?
-	if st.session_state.FakeRuns:
-		#	Assign a sleep command to fake a DYNPOST MPF run
+	#	Run DYNPOST or simulate a DYNPOST run with the sleep command?
+	if st.session_state.SimulateRuns:
+		#	Assign a sleep command to simulate a DYNPOST MPF run
 		s2w = random.randint(1,5)
 		runcmd = 'sleep(' + str(s2w) + ')'
 		if st.session_state.ExtendedPrint: st.write('DYNPOST MPF run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
@@ -290,9 +291,9 @@ def S4O_SIMLA_DYNPOST_EXT_Run(lrun):
 	cwd = st.session_state.modelFileDir + "/" + st.session_state.modelFileName
 	os.chdir(cwd)
 
-	#	Run DYNPOST or fake a DYNPOST run with the sleep command?
-	if st.session_state.FakeRuns:
-		#	Assign a sleep command to fake a DYNPOST EXT run
+	#	Run DYNPOST or simulate a DYNPOST run with the sleep command?
+	if st.session_state.SimulateRuns:
+		#	Assign a sleep command to simulate a DYNPOST EXT run
 		s2w = random.randint(5,10)
 		runcmd = 'sleep(' + str(s2w) + ')'
 		if st.session_state.ExtendedPrint: st.write('DYNPOST EXT run waits for ' + str(s2w) + ' seconds.')
@@ -312,7 +313,7 @@ def S4O_SIMLA_DYNPOST_EXT_Run(lrun):
 def S4O_SIMLA_Check_Run_Success(irun):
 
 	#	Return True if simulated run
-	if st.session_state.FakeRuns: return True
+	if st.session_state.SimulateRuns: return True
 
 	#	Set default return value
 	success = False
@@ -341,7 +342,7 @@ def S4O_SIMLA_Check_Run_Success(irun):
 def S4O_DYNPOST_MPF_Check_Run_Success(irun):
 
 	#	Return True if simulated run
-	if st.session_state.FakeRuns: return True
+	if st.session_state.SimulateRuns: return True
 
 	#	Set default return value
 	success = False
@@ -370,7 +371,7 @@ def S4O_DYNPOST_MPF_Check_Run_Success(irun):
 def S4O_DYNPOST_EXT_Check_Run_Success():
 
 	#	Return True if simulated run
-	if st.session_state.FakeRuns: return True
+	if st.session_state.SimulateRuns: return True
 
 	#	Set default return value
 	success = False
