@@ -78,22 +78,22 @@ def S4O_MakeSIMLAInput(sifname, irun):
     EI = float(st.session_state.df_Seabed.iloc[18,1])               #   Bending stiffness, for klay-calculations [Nm2]
 
     #   Assign ENVIRONMENT parameters
-    zseabed = -float(st.session_state.df_Environment.iloc[0,1])     #   Z-cordinate of seafloor [m] (-[Water depth])
-    Hs = float(st.session_state.df_Environment.iloc[1,1])           #   Significant wave height [m]
-    Tp = float(st.session_state.df_Environment.iloc[2,1])           #   Significant wave period [s]
-    wavang = float(st.session_state.df_Environment.iloc[3,1])       #   Wave direction [deg]
+    zseabed = -float(st.session_state.df_Environment.iloc[0,1])              #   Z-cordinate of seafloor [m] (-[Water depth])
+    Hs = float(st.session_state.df_Environment.iloc[1,1])                    #   Significant wave height [m]
+    Tp = float(st.session_state.df_Environment.iloc[2,1])                    #   Significant wave period [s]
+    wavang = float(st.session_state.df_Environment.iloc[3,1])/180.0*np.pi    #   Wave direction [deg]
     ndx = int(st.session_state.df_Environment.iloc[4,1])
-    iwavespec = st.session_state.WaveSpectraValues[ndx]             #   Wave spectrum : 1=PM, 2=JONSWAP
-    pkdness = float(st.session_state.df_Environment.iloc[5,1])      #   Peakedness parameter
+    iwavespec = st.session_state.WaveSpectraValues[ndx]                      #   Wave spectrum : 1=PM, 2=JONSWAP
+    pkdness = float(st.session_state.df_Environment.iloc[5,1])               #   Peakedness parameter
     ndx = int(st.session_state.df_Environment.iloc[6,1])
-    chspread = st.session_state.WaveSpreadingValues[ndx]            #   Wave spreading type : "long", "short"
-    ndir = int(st.session_state.df_Environment.iloc[7,1])           #   Number of directions
-    spreadpar = float(st.session_state.df_Environment.iloc[8,1])    #   Spreading function exponent
-    curvel = float(st.session_state.df_Environment.iloc[9,1])       #   Current velocity [m/s]
-    curang = float(st.session_state.df_Environment.iloc[10,1])      #   Current direction [deg]
-    cuhref = float(st.session_state.df_Environment.iloc[11,1])      #   Current reference height [m]
-    curough = float(st.session_state.df_Environment.iloc[12,1])     #   Seabed roughness [m]
-    d50 = float(st.session_state.df_Environment.iloc[13,1])         #   Median grain size [m]
+    chspread = st.session_state.WaveSpreadingValues[ndx]                     #   Wave spreading type : "long", "short"
+    ndir = int(st.session_state.df_Environment.iloc[7,1])                    #   Number of directions
+    spreadpar = float(st.session_state.df_Environment.iloc[8,1])             #   Spreading function exponent
+    curvel = float(st.session_state.df_Environment.iloc[9,1])                #   Current velocity [m/s]
+    curang = float(st.session_state.df_Environment.iloc[10,1])/180.0*np.pi   #   Current direction [deg]
+    cuhref = float(st.session_state.df_Environment.iloc[11,1])               #   Current reference height [m]
+    curough = float(st.session_state.df_Environment.iloc[12,1])              #   Seabed roughness [m]
+    d50 = float(st.session_state.df_Environment.iloc[13,1])                  #   Median grain size [m]
 
     #   Assign EXECUTION parameters
 
