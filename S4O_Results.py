@@ -2,13 +2,15 @@
 File: S4O_Results.py
 Description:
 These functions initiates and updates the df_Results pandas dataframe.
+Revisions:
+YYYY-MM-DD:
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
 __version__ = "2025-03-27"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import streamlit as st
 import os

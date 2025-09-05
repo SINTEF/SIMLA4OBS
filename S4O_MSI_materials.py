@@ -1,6 +1,18 @@
+"""
+File: S4O_MSI_materials.py
+Description:
+The "materials" function writes material data to the SIMLA input file (.sif).
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-10-31"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
+
 import numpy as np
-
-
 
 def materials( file           , rho_sea        ,  kz_seabed      ,
                EA_dum         , EI_dum         ,  GJ_dum         ,

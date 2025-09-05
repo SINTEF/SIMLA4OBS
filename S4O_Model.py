@@ -2,13 +2,15 @@
 File: S4O_Model.py
 Description:
 These functions initiates and updates the df_Model pandas dataframe.
+Revisions:
+2025-09-05: S4O_Read_Model; Improved checking of version compability when opening an existing model file.
 """
 __author__ = "Egil Giertsen"
 __credits__ = [""]
 __license__ = "GPLv3"
-__version__ = "2025-06-02"
+__version__ = "2025-09-05"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import pandas as pd
 import streamlit as st
@@ -212,6 +214,9 @@ def S4O_Read_Model():
 	#	Close file
 	f.close()
 
+	#	Assign current SIMLA4OBS program version
+	currver = st.session_state.S4O_versionID.replace("SIMLA4OBS version ", "")
+
 	#	Loop through all lines in the file
 	nlines = len(lines)
 	for iline in range(nlines):
@@ -224,13 +229,8 @@ def S4O_Read_Model():
 			#	Comment line, do nothing
 			continue
 		elif iline == 1:
-			#	Check and store program version
-			version = cline
-			if version != st.session_state.S4O_versionID:
-				st.error("You have to open the model with the same program version (" + version + ") as you used when saving it!", icon="🚨")
-				return
-			else:
-				st.session_state.S4O_versionID = version
+			#	Assign the SIMLA4OBS program version on file
+			filever = cline.replace("SIMLA4OBS version ", "")
 
 		elif iline == 3:
 			#	Store model title
@@ -248,6 +248,7 @@ def S4O_Read_Model():
 				pvals = st.session_state.df_Product.shape[0]
 				if nvals != pvals:
 					st.error("Number of Product parameters on file (" + str(nvals) + ") is different from the expected number (" + str(pvals) + ")!", icon="🚨")
+					st.error("The current SIMLA4OBS program version (" + currver + ") is probably newer than the version you used when saving the model (" + filever + ")!", icon="🚨")
 					return
 				#	Store Product parameters
 				for ndx in range(nvals):
@@ -258,6 +259,7 @@ def S4O_Read_Model():
 				pvals = st.session_state.df_Seabed.shape[0]
 				if nvals != pvals:
 					st.error("Number of Seabed parameters on file (" + str(nvals) + ") is different from the expected number (" + str(pvals) + ")!", icon="🚨")
+					st.error("The current SIMLA4OBS program version (" + currver + ") is probably newer than the version you used when saving the model (" + filever + ")!", icon="🚨")
 					return
 				#	Store Seabed parameters
 				for ndx in range(nvals):
@@ -271,6 +273,7 @@ def S4O_Read_Model():
 				pvals = st.session_state.df_Environment.shape[0]
 				if nvals != pvals:
 					st.error("Number of Environment parameters on file (" + str(nvals) + ") is different from the expected number (" + str(pvals) + ")!", icon="🚨")
+					st.error("The current SIMLA4OBS program version (" + currver + ") is probably newer than the version you used when saving the model (" + filever + ")!", icon="🚨")
 					return
 				#	Store Environment parameters
 				for ndx in range(nvals):
@@ -284,6 +287,7 @@ def S4O_Read_Model():
 				pvals = st.session_state.df_Execution.shape[0]
 				if nvals != pvals:
 					st.error("Number of Execution parameters on file (" + str(nvals) + ") is different from the expected number (" + str(pvals) + ")!", icon="🚨")
+					st.error("The current SIMLA4OBS program version (" + currver + ") is probably newer than the version you used when saving the model (" + filever + ")!", icon="🚨")
 					return
 				#	Store Execution parameters
 				for ndx in range(nvals):
@@ -309,6 +313,7 @@ def S4O_Read_Model():
 
 			else:
 				st.error("Unexpected number of lines (" + str(nlines) + ") in model file!", icon="🚨")
+				st.error("The current SIMLA4OBS program version (" + currver + ") is probably newer than the version you used when saving the model (" + filever + ")!", icon="🚨")
 				return
 
 	st.rerun()

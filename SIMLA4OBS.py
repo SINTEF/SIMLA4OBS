@@ -3,13 +3,15 @@ File: SIMLA4OBS.py
 Description:
 This program generates SIMLA input files for on-bottom stability analysis,
 runs them and reads and reports the results from the executed analyses.
+Revisions:
+2025-09-05: Updated SIMLA4OBS version number to "1.1 / 2025".
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
-__version__ = "2025-06-02"
+__version__ = "2025-09-05"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import sys
 import streamlit as st
@@ -33,7 +35,7 @@ def main():
 
 	#	Assign SIMLA4OBS version number
 	if 'S4O_versionID' not in st.session_state:
-		st.session_state.S4O_versionID = 'SIMLA4OBS version 1.0 / 2025'
+		st.session_state.S4O_versionID = 'SIMLA4OBS version 1.1 / 2025'
 
 	#	Set initial model path, directory and name
 	if 'modelMainTitle' not in st.session_state:
@@ -61,7 +63,7 @@ def main():
 
 	#	Initialize SIMLA4OBS and SIMLA global parameters
 	if 'SIMLA4OBS_PATH' not in st.session_state:
-		st.session_state.SIMLA4OBS_PATH = 'P:/Ocean/SIMLA4OBS'
+		st.session_state.SIMLA4OBS_PATH = 'C:/SINTEFOcean/SIMLA4OBS'
 		sys.path.append(st.session_state.SIMLA4OBS_PATH)
 	if 'SIMLA_HOME' not in st.session_state:
 		#	Set the SIMLA_HOME and HLALIB_PATH environment variables

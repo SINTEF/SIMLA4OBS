@@ -1,7 +1,7 @@
 To install the SIMLA4OBS (S4O) application on your PC please follow these steps:
 
-1. Install Python version 3.11 on your computer. As of June 2025, Python version 3.12 and 3.13 do not work due to incompatiblity issues. 
-   Version 3.10 and older ones have not been tested.
+1. Install Python version 3.11 on your computer. As of June 2025, Python versions 3.12 and 3.13 do not work due to incompatiblity issues. 
+   Version 3.10 and older have not been tested.
 2. Create a new folder (e.g. on your C: drive) where you want to store your copy of the SIMLA4OBS application
 3. Unzip your ZIP'ed SIMLA4OBS package onto the directory you created in step 2
 4. In the SIMLA4OBS.py file, edit the assignment of parameter "st.session_state.SIMLA4OBS_PATH" to point to the directory you created in step 2

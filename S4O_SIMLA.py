@@ -2,13 +2,17 @@
 File: S4O_SIMLA.py
 Description:
 These functions creates SIMLA input files, runs SIMLA and reads results.
+Revisions:
+2025-09-03: S4O_SIMLA_Subprocess_Open; Added print of SIMLA run command if "Extended print" and "Simulate runs" both are ticked on.
+2025-09-04: S4O_Run_SIMLA_Block; Rewrote function to use process.wait() to wait for subprocesses, and added calculation of elapsed wall-clock time per block.
+2025-09-04: S4O_Run_SIMLA; Added calculation of total elapsed wall-clock time for all runs.
 """
 __author__ = "Egil Giertsen"
 __credits__ = [""]
 __license__ = "GPLv3"
-__version__ = "2025-03-17"
+__version__ = "2025-09-04"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import pandas as pd
 import streamlit as st
@@ -150,6 +154,8 @@ def S4O_Run_SIMLA():
 		st.session_state.simlaProgressBar = st.progress(st.session_state.simlaProgressCurr)
 
 	#	Loop over number of blocks to be run
+	wclstart = time.perf_counter()
+
 	while cblock <= nblocks:
 
 		if not st.session_state.SimulateRuns: st.write('Executing SIMLA block number ' + str(cblock) + ' for runs ' + str(frun) + ' to ' + str(lrun) + '.')
@@ -177,8 +183,13 @@ def S4O_Run_SIMLA():
 		lrun = frun + nrunspb - 1
 		if lrun > nrunsmax: lrun = nrunsmax
 
+	#	Calculate elapsed wall-clock time for all blocks
+	wclend     = time.perf_counter()
+	wclelapsed = wclend - wclstart
+
 	#	All SIMLA runs completed
-	st.write('All SIMLA blocks (' + str(nblocks) + ') covering runs 1 to ' + str(lrun) + ' have finished.')
+	st.write('All SIMLA blocks (' + str(nblocks) + ') covering runs 1 to ' + str(lrun) + ' have finished.' +
+			 ' Total elapsed wall-clock time : ' + str(int(wclelapsed)) + ' seconds.')
 
 	#	Set progress bar to "Complete" (100)
 	if st.session_state.GenerateInputs or st.session_state.RunAnalyses:
@@ -189,7 +200,7 @@ def S4O_Run_SIMLA():
 #
 #
 
-def S4O_Run_SIMLA_Block(frun, lrun):
+def S4O_Run_SIMLA_Block_OLD(frun, lrun):
 
 	#	------------------------------------
 	#	Start all SIMLA runs as subprocesses
@@ -231,9 +242,57 @@ def S4O_Run_SIMLA_Block(frun, lrun):
 
 		if nprunning == 0: stillrunning = False
 
-		if stillrunning: time.sleep(1)
+		if stillrunning:
+			st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
+			time.sleep(1)
 
 	if not st.session_state.SimulateRuns and st.session_state.ExtendedPrint: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.')
+
+	return
+#
+#
+
+def S4O_Run_SIMLA_Block(frun, lrun):
+
+	#	-----------------------------------------------------------
+	#	Execute all SIMLA runs in the current block as subprocesses
+	#	-----------------------------------------------------------
+	wclstart = time.perf_counter()
+
+	#	Start subprocesses
+	irun  = frun
+	plist = []
+	while irun <= lrun:
+		p = S4O_SIMLA_Subprocess_Open(irun)
+		plist.append(p)
+		irun += 1
+
+	#	Make all subprocesses wait until they have finished
+	for p in plist:
+		p.wait()
+
+	#	All subprocesses have finished, update progress bar and check for errors
+	irun = frun
+	while irun <= lrun:
+		if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' has finished.')
+
+		#	Update progress bar
+		st.session_state.simlaProgressCurr += st.session_state.simlaProgressDelta
+		st.session_state.simlaProgressBar.progress(st.session_state.simlaProgressCurr)
+
+		#	Check for errors
+		if not S4O_SIMLA_Check_Run_Success(irun):
+			st.error('SIMLA run number ' + str(irun) + ' failed!', icon="🚨")
+			break
+	
+		irun += 1
+
+	#	Calculate elapsed wall-clock time for the current block
+	wclend     = time.perf_counter()
+	wclelapsed = wclend - wclstart
+
+	if not st.session_state.SimulateRuns: st.write('All SIMLA runs ' + str(frun) + ' to ' + str(lrun) + ' have finished.' +
+												   ' Elapsed wall-clock time : ' + str(int(wclelapsed)) + ' seconds.')
 
 	return
 #
@@ -250,7 +309,10 @@ def S4O_SIMLA_Subprocess_Open(irun):
 		#	Assign a sleep command to simulate a SIMLA run
 		s2w = random.randint(15,30)
 		runcmd = 'sleep(' + str(s2w) + ')'
-		if st.session_state.ExtendedPrint: st.write('SIMLA run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
+		if st.session_state.ExtendedPrint:
+			sruncmd = st.session_state.SIMLA_EXE + ' -n s' + ' -s2 ' + str(st.session_state.SIMLA_nstep_dynres) + ' > simla_print.out'
+			st.write('SIMLA run command : '+ sruncmd)
+			st.write('SIMLA run number ' + str(irun) + ' waits for ' + str(s2w) + ' seconds.')
 	else:
 		#	Assign the SIMLA run command
 		runcmd = st.session_state.SIMLA_EXE + ' -n s' + ' -s2 ' + str(st.session_state.SIMLA_nstep_dynres) + ' > simla_print.out'

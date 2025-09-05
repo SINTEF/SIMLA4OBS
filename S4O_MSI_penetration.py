@@ -1,5 +1,18 @@
-import numpy as np
+"""
+File: S4O_MSI_penetration.py
+Description:
+The "penetration" function calculates initial soil penetration.
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-11-14"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
 
+import numpy as np
 
 def penetration(  submass_lay ,  diam         ,  EI            ,  
                   T0          ,  rho_sea      ,  gamd_sand     ,

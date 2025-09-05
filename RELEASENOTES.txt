@@ -1,0 +1,14 @@
+SIMLA4OBS Release Notes
+=======================
+
+Version 1.0 / 2025
+------------------
+- Initial release.
+
+Version 1.1 / 2025
+------------------
+- Improved execution of SIMLA analyses as blocked subprocesses.
+- Added calculation of wall-clock time spent per block and total.
+- Improved checking of version compability when opening an existing model file.
+- Added header with revision history for all Python files.
+

@@ -1,6 +1,19 @@
+"""
+File: S4O_MSI_thist.py
+Description:
+The "thist" function writes time history information to the SIMLA input file (.sif).
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-10-31"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
+
 def thist( file         , thist_inizpen    , thist_wavecur   ,
            tend_static  ):
-
 
     file.write("#\n")
     file.write("#-----------------------------------------------------------------------------------------------------------------------------\n")

@@ -1,3 +1,17 @@
+"""
+File: S4O_MakeRESULTSInput.py
+Description:
+The "results" function writes result data to the SIMLA input files.
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-10-31"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
+
 import numpy as np
 import os
 

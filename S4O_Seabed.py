@@ -2,13 +2,15 @@
 File: S4O_Seabed.py
 Description:
 These functions initiates and updates the df_Seabed pandas dataframe.
+Revisions:
+YYYY-MM-DD:
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
 __version__ = "2025-03-14"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import pandas as pd
 import streamlit as st

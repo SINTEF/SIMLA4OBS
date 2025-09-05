@@ -1,3 +1,17 @@
+"""
+File: S4O_MSI_elements.py
+Description:
+The "elements" function writes element data to the SIMLA input file (.sif).
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-10-31"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
+
 import numpy as np
 
 def elements( file           , Lpipe          , mass           ,

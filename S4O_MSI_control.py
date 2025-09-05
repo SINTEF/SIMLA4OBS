@@ -1,3 +1,16 @@
+"""
+File: S4O_MSI_control.py
+Description:
+The "control" function writes control data to the SIMLA input file (.sif).
+Revisions:
+YYYY-MM-DD: 
+"""
+__author__ = "Vegard Longva"
+__credits__ = [""]
+__license__ = "GPLv3"
+__version__ = "2024-11-28"
+__maintainer__ = "Vegard Longva"
+__email__ = "Vegard.Longva@sintef.no"
 
 import numpy as np
 

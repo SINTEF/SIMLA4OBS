@@ -2,13 +2,15 @@
 File: S4O_MakeSIMLAInput.py
 Description:
 This function creates a SIMLA input file for the SIMLA4OBS application.
+Revisions:
+2025-06-24: Corrected error in wave and current directions by converting to radians.
 """
 __author__ = "Vegard Longva"
 __credits__ = ["Egil Giertsen"]
 __license__ = "GPLv3"
-__version__ = "2025-03-14"
+__version__ = "2025-06-24"
 __maintainer__ = "Egil Giertsen, Vegard Longva"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 # Packages
 import streamlit as st
@@ -16,7 +18,6 @@ import numpy as np
 import os
 
 # Functions
-#from S4O_MSI_soil import soil
 from S4O_MSI_control import control
 from S4O_MSI_penetration import penetration
 from S4O_MSI_elements import elements

@@ -2,13 +2,15 @@
 File: S4O_Execution.py
 Description:
 These functions initiates and updates the df_Execution pandas dataframe, runs SIMLA executions and reads and processes results.
+Revisions:
+YYYY-MM-DD:
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
 __version__ = "2025-06-02"
 __maintainer__ = "Egil Giertsen"
-__email__ = "giertsen@sintef.no"
+__email__ = "Egil.Giertsen@sintef.no"
 
 import pandas as pd
 import streamlit as st
