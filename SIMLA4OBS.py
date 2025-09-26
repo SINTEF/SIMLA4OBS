@@ -5,11 +5,13 @@ This program generates SIMLA input files for on-bottom stability analysis,
 runs them and reads and reports the results from the executed analyses.
 Revisions:
 2025-09-05: Updated SIMLA4OBS version number to "1.1 / 2025".
+2025-09-22: Made the "Static configuration + Wave load ramping time" part of the time series optional.
+2025-09-23: Updated SIMLA4OBS version number to "1.2 / 2025".
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
 __license__ = "GPLv3"
-__version__ = "2025-09-05"
+__version__ = "2025-09-23"
 __maintainer__ = "Egil Giertsen"
 __email__ = "Egil.Giertsen@sintef.no"
 
@@ -35,7 +37,7 @@ def main():
 
 	#	Assign SIMLA4OBS version number
 	if 'S4O_versionID' not in st.session_state:
-		st.session_state.S4O_versionID = 'SIMLA4OBS version 1.1 / 2025'
+		st.session_state.S4O_versionID = 'SIMLA4OBS version 1.2 / 2025'
 
 	#	Set initial model path, directory and name
 	if 'modelMainTitle' not in st.session_state:
@@ -87,7 +89,11 @@ def main():
 
 	#	Assign nstep_dynres as global parameter
 	if 'SIMLA_nstep_dynres' not in st.session_state:
-		st.session_state.SIMLA_nstep_dynres = int(0)
+		st.session_state.SIMLA_nstep_dynres = 0
+
+	#	Define maximum number of points in a time series result plot
+	if 'MaxPointsTSPlot' not in st.session_state:
+		st.session_state.MaxPointsTSPlot = 1000000
 
 	#	Initialize additional global application parameters
 	if 'CPU_count' not in st.session_state:
@@ -117,13 +123,15 @@ def main():
 	if 'ExtendedPrint' not in st.session_state:
 		st.session_state.ExtendedPrint = False
 
-	#	Initialize analysis check boxes
+	#	Initialize analysis and result check boxes
 	if 'GenerateInputs' not in st.session_state:
 		st.session_state.GenerateInputs = True
 	if 'RunAnalyses' not in st.session_state:
 		st.session_state.RunAnalyses = True
 	if 'ResultsCalculated' not in st.session_state:
 		st.session_state.ResultsCalculated = False
+	if 'IncludeWaveRamping' not in st.session_state:
+		st.session_state["IncludeWaveRamping"] = True
 
 	#	Initialize options in selectboxes
 	if 'SeabedOptions' not in st.session_state:

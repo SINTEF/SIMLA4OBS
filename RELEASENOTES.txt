@@ -1,14 +1,21 @@
 SIMLA4OBS Release Notes
 =======================
 
-Version 1.0 / 2025
-------------------
+Version 1.0 / 2025 (2025-06-02)
+-------------------------------
 - Initial release.
 
-Version 1.1 / 2025
-------------------
+Version 1.1 / 2025 (2025-09-05)
+-------------------------------
 - Improved execution of SIMLA analyses as blocked subprocesses.
 - Added calculation of wall-clock time spent per block and total.
 - Improved checking of version compability when opening an existing model file.
 - Added header with revision history for all Python files.
+
+Version 1.2 / 2025 (2025-09-26)
+-------------------------------
+- Corrected bug related to truncation of time series when reading these from .dyn files. New version of rafina module released, run "pip install rafina --upgrade" to install.
+- Made plotting of the "static configuration + wave load ramping time" part of the time series optional.
+- Added error message if trying to plot too many (>1000000) time series values.
+- Deleted "tendwaveramp"from the "tendwaveramp+tdurwave" expressions to avoid doubling of the wave load ramping time.
 

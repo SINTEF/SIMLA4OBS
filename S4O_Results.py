@@ -3,7 +3,9 @@ File: S4O_Results.py
 Description:
 These functions initiates and updates the df_Results pandas dataframe.
 Revisions:
-YYYY-MM-DD:
+2025-09-19: S4O_ReadTSArrays, S4O_ReadTSMaxMin; Cleaned up wording and code related to "Assign index to the last non-zero time value".
+2025-09-23: S4O_ReadTSArrays, S4O_ReadTSMaxMin; Added "ndxstart" as input parameter to be able to remove the "static configuration + wave load ramping time" from the time series if specified by the user.
+2025-09-23: S4O_Show_TS_Plot; Added checkbox "Include wave load ramping time". Default = True.
 """
 __author__ = "Egil Giertsen"
 __credits__ = ["Terje Rølvåg"]
@@ -125,6 +127,7 @@ def S4O_Generate_Results(lrun):
 	#	Generate list of results for displacement in y direction (tsid=5)
 	#	-----------------------------------------------------------------
 	tsid = 5
+
 	#	Initialize temporary result arrays
 	runlist = []
 	meanlist = []
@@ -142,7 +145,9 @@ def S4O_Generate_Results(lrun):
 
 	#	Loop over all realisations (runs)
 	#	---------------------------------
-	irun = 0
+	ndxstart = 0
+
+	irun     = 0
 	for ndx in range(lrun):
 		#	Assign current run number
 		irun += 1
@@ -160,8 +165,11 @@ def S4O_Generate_Results(lrun):
 			st.error("Failed to assign " + dynfile + " as a DYNPOST object", icon="🚨")
 			raise
 
+		#	Get total number of non-zero time series values
+		st.session_state.SIMLA_nstep_dynres = S4O_ReadTSNNZVals(dynobj)
+
 		#	Get time series max and min values for the current run
-		maxval, maxtime, minval, mintime = S4O_ReadTSMaxMin(dynobj, tsid)
+		maxval, maxtime, minval, mintime = S4O_ReadTSMaxMin(dynobj, tsid, ndxstart)
 
 		#	Append current run number
 		runlist.append(irun)
@@ -341,6 +349,14 @@ def S4O_Show_TS_Plot():
 	dtdyn = float(st.session_state.df_Execution.iloc[0,1])
 	dtvis = 0.5
 
+	#	Assign time step for the dynamic analysis and the wave load ramping time
+	dtdyn   = float(st.session_state.df_Execution.iloc[0,1])
+	tdursim = float(st.session_state.df_Execution.iloc[1,1])*3600.0
+
+	#	Assign start index for the time series to plot
+	if st.session_state["IncludeWaveRamping"]: ndxstart = 0
+	else:									   ndxstart = st.session_state.SIMLA_nstep_dynres - math.ceil(tdursim/dtdyn)
+
 	#	Group the widgets required to select which time series to plot into a form to avoid unwanted refresh of page
 	#	------------------------------------------------------------------------------------------------------------
 	with st.form(key='Time series plot'):
@@ -354,7 +370,11 @@ def S4O_Show_TS_Plot():
 		#	Select which sea state realisations (runs) to plot (default=all)
 		selected_realisations = st.multiselect('Select which realisations (runs) to plot :', realisations, default=realisations)
 
-		dtvis = st.number_input("Specify time step to be used for curve plots [s] :", min_value=dtdyn, value=dtvis, format="%.4f")
+		#	Specify time step to be used for the time series plots
+		dtvis = st.number_input("Specify time step to be used for the time series plots [s] :", min_value=dtdyn, value=dtvis, format="%.4f")
+
+		#	Specify whether to include the "Wave load ramping time" as part of the time series
+		st.checkbox('Include wave load ramping time', key='IncludeWaveRamping', value=st.session_state.IncludeWaveRamping)
 
 		#	Display the "Plot" button
 		plot = st.form_submit_button("Plot", help="Plot the time series for the selected realisations (runs)")
@@ -390,7 +410,16 @@ def S4O_Show_TS_Plot():
 			raise
 
 		#	Get the time series (time=x, value=y), maximum value + time and minimum value + time for the current run from the specified time series
-		x, y, maxval, maxtime, minval, mintime = S4O_ReadTSArrays(dynobj, tsid, dtdyn, dtvis)
+		x, y, maxval, maxtime, minval, mintime = S4O_ReadTSArrays(dynobj, tsid, dtdyn, dtvis, ndxstart)
+
+		#	Check that number of points in the time series to plot is below or equal to maximum number of points
+		npoints = len(x)
+		if npoints > st.session_state.MaxPointsTSPlot:
+			ndxend    = np.argmax(dynobj.time)
+			minstride = math.ceil((ndxend+1)/st.session_state.MaxPointsTSPlot)
+			mindtvis  = dtdyn*minstride
+			st.error("Too many points in the time series, unable to plot! Please increase the time step to be used for the plots to at least " + str(mindtvis) + " seconds.", icon="🚨")
+			return
 
 		#	Add the time series for the current run to the time series plot
 		#	---------------------------------------------------------------
@@ -439,43 +468,68 @@ def S4O_Show_TS_Plot():
 #
 #
 
-def S4O_ReadTSArrays(dynobj, tsid, dtdyn, dtvis):
+def S4O_ReadTSArrays(dynobj, tsid, dtdyn, dtvis, ndxstart):
 
 	#	Get the time series, maximum value + time and minimum value + time for the specified dyn object and time series id
 
-	#	Assign index to the last time value in the time series
-	ndx = np.argmax(dynobj.time) + 1
+	#	Assign index to the last non-zero time value
+	ndxend = np.argmax(dynobj.time)
 
 	#	Assign the stride number (step) to be used when extracting the time series arrays
-	stride = int(dtvis/dtdyn)
+	stride = math.ceil(dtvis/dtdyn)
+
+	#	Assign selection
+	selection = range(ndxstart, ndxend+1, stride)
 
 	#	Extract the time serie arrays
-	x = dynobj.time[:ndx:stride]
-	y = dynobj.dynres[:ndx:stride,tsid]
+	x = dynobj.time[selection]
+	y = dynobj.dynres[selection, tsid]
 
-	#	Get the max and min values
-	maxval  = dynobj.dynres[:ndx,tsid].max()
-	maxtime = dynobj.time[np.argmax(dynobj.dynres[:ndx,tsid])]
-	minval  = dynobj.dynres[:ndx,tsid].min()
-	mintime = dynobj.time[np.argmin(dynobj.dynres[:ndx,tsid])]
+	#	Get the max and min values and times
+	ndxmax  = np.argmax(y)
+	maxtime = x[ndxmax]
+	maxval  = y[ndxmax]
+	ndxmin  = np.argmin(y)
+	mintime = x[ndxmin]
+	minval  = y[ndxmin]
 
 	return x, y, maxval, maxtime, minval, mintime
 #
 #
 
-def S4O_ReadTSMaxMin(dynobj, tsid):
+def S4O_ReadTSMaxMin(dynobj, tsid, ndxstart):
 
-	#	Get the time series, maximum value + time and minimum value + time for the specified dyn object and time series id
+	#	Get the maximum value + time and minimum value + time for the specified dyn object and time series id
 
-	#	Assign index to the last time value
-	ndx = np.argmax(dynobj.time) + 1
+	#	Assign index to the last non-zero time value
+	ndxend = np.argmax(dynobj.time)
+
+	#	Assign selection
+	selection = range(ndxstart, ndxend+1)
+
+	#	Extract the time serie arrays
+	x = dynobj.time[selection]
+	y = dynobj.dynres[selection, tsid]
 
 	#	Get the max and min values and times
-	maxval  = dynobj.dynres[:ndx,tsid].max()
-	maxtime = dynobj.time[np.argmax(dynobj.dynres[:ndx,tsid])]
-	minval  = dynobj.dynres[:ndx,tsid].min()
-	mintime = dynobj.time[np.argmin(dynobj.dynres[:ndx,tsid])]
+	ndxmax  = np.argmax(y)
+	maxtime = x[ndxmax]
+	maxval  = y[ndxmax]
+	ndxmin  = np.argmin(y)
+	mintime = x[ndxmin]
+	minval  = y[ndxmin]
 
 	return maxval, maxtime, minval, mintime
+#
+#
+
+def S4O_ReadTSNNZVals(dynobj):
+
+	#	Get total number of non-zero time series values
+
+	#	Assign index to the last non-zero time value
+	ndxend = np.argmax(dynobj.time)
+
+	return ndxend + 1
 #
 #
