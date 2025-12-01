@@ -25,7 +25,7 @@ executing==1.2.0
 filelock==3.12.2
 Fiona==1.9.4.post1
 folium==0.14.0
-fonttools==4.42.1
+fonttools==4.61.0
 gdown==4.7.1
 geojson==3.0.1
 geopandas==0.13.2
