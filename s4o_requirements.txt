@@ -98,7 +98,7 @@ traittypes==0.2.1
 typing_extensions==4.5.0
 tzdata==2022.7
 tzlocal==4.2
-urllib3==1.26.15
+urllib3==2.6.0
 validators==0.20.0
 watchdog==2.3.1
 wcwidth==0.2.6
