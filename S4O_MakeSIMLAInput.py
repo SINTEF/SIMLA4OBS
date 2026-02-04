@@ -81,7 +81,7 @@ def S4O_MakeSIMLAInput(sifname, irun):
     #   Assign ENVIRONMENT parameters
     zseabed = -float(st.session_state.df_Environment.iloc[0,1])              #   Z-cordinate of seafloor [m] (-[Water depth])
     Hs = float(st.session_state.df_Environment.iloc[1,1])                    #   Significant wave height [m]
-    Tp = float(st.session_state.df_Environment.iloc[2,1])                    #   Significant wave period [s]
+    Tp = float(st.session_state.df_Environment.iloc[2,1])                    #   Peak wave period [s]
     wavang = float(st.session_state.df_Environment.iloc[3,1])/180.0*np.pi    #   Wave direction [deg]
     ndx = int(st.session_state.df_Environment.iloc[4,1])
     iwavespec = st.session_state.WaveSpectraValues[ndx]                      #   Wave spectrum : 1=PM, 2=JONSWAP

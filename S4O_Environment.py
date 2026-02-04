@@ -53,7 +53,7 @@ def S4O_Environment():
 	#	Waves
 	st.subheader('Waves')
 	Hs = st.number_input("Significant wave height [m] :", min_value=0.0, max_value=100.0, value=Hs, format="%.2f")
-	Tp = st.number_input("Significant wave period [s] :", min_value=0.0, max_value=100.0, value=Tp, format="%.2f")
+	Tp = st.number_input("Peak wave period [s] :", min_value=0.0, max_value=100.0, value=Tp, format="%.2f")
 	Wdir = st.number_input("Wave direction [deg] :", help="Wave direction relative to product X-axis [deg]", min_value=0.0, max_value=180.0, value=Wdir, format="%.2f")
 	#	Select wave spectrum
 	Spectrum_Selected = st.selectbox('Select wave spectrum :', st.session_state.WaveSpectraOptions, index=cwsnx)
@@ -77,7 +77,7 @@ def S4O_Environment():
 
 	#	Store environment parameters
 	Edata = [['Water depth [m] :', WD],
-		     ['Significant wave height [m] :', Hs], ['Significant wave period [s] :', Tp], ['Wave direction [deg] :', Wdir],
+		     ['Significant wave height [m] :', Hs], ['Peak wave period [s] :', Tp], ['Wave direction [deg] :', Wdir],
 		     ['Selected wave spectrum index :', swsnx], ['Peakedness parameter [-] :', Peakp], ['Selected wave spreading index :', sstnx], 
 		     ['Number of directions [-] :', Ndir], ['Spreading function exponent [-] :', Sexp],
 		     ['Current velocity [m/s] :', Cvel], ['Current direction [deg] :', Cdir],
@@ -125,7 +125,7 @@ def S4O_Environment_Defaults():
 		st.warning('S4O_Environment_Defaults : Should not be here!', icon="⚠️")
 
 	Edata = [['Water depth [m] :', WD],
-		     ['Significant wave height [m] :', Hs], ['Significant wave period [s] :', Tp], ['Wave direction [deg] :', Wdir],
+		     ['Significant wave height [m] :', Hs], ['Peak wave period [s] :', Tp], ['Wave direction [deg] :', Wdir],
 		     ['Selected wave spectrum index :', cwsnx], ['Peakedness parameter [-] :', Peakp], ['Selected wave spreading index :', cstnx], 
 		     ['Number of directions [-] :', Ndir], ['Spreading function exponent [-] :', Sexp],
 		     ['Current velocity [m/s] :', Cvel], ['Current direction [deg] :', Cdir],
