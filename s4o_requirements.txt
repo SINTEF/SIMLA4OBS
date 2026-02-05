@@ -58,7 +58,7 @@ parso==0.8.3
 pickleshare==0.7.5
 Pillow==9.4.0
 prompt-toolkit==3.0.39
-protobuf==3.20.3
+protobuf==5.29.6
 pure-eval==0.2.2
 pyarrow==11.0.0
 pydeck==0.8.0
